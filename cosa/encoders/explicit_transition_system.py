@@ -187,13 +187,13 @@ class ExplicitTSParser(object):
         invar = And(invar, BVULE(stateid_var, BV(count-1, stateid_width)))
         ts = TS("Additional system")
         ts.set_behavior(init, trans, invar)
+        ts.add_state_var(stateid_var)
 
         hts = HTS("ETS")
         hts.add_ts(ts)
         invar_props = []
         ltl_props = []
 
-        hts.state_vars = set([stateid_var])
         
         return (hts, invar_props, ltl_props)
                 
