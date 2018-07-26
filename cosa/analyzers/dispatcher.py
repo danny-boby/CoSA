@@ -220,6 +220,7 @@ class ProblemSolver(object):
                 timer_solve = Logger.start_timer("Problem %s"%problem.name, False)
             try:
                 self.solve_problem(problem, config)
+                Logger.msg(" %s\n"%problem.status, 0)
                 
                 if config.time or problems.time:
                     problem.time = Logger.get_timer(timer_solve, False)

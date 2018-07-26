@@ -166,7 +166,6 @@ class BMCLTL(BMCTemporal, BMCSafety):
             if self._solve(self.solver):
                 Logger.log("Counterexample (no-loop) found with k=%s"%(t), 1)
                 model = self._get_model(self.solver)
-                Logger.log(" "+VerificationStatus.FALSE, 0, not(Logger.level(1)))
                 return (t, model)
 
             nltlprop = []
@@ -182,7 +181,6 @@ class BMCLTL(BMCTemporal, BMCSafety):
             if self._solve(self.solver):
                 Logger.log("Counterexample (with-loop) found with k=%s"%(t), 1)
                 model = self._get_model(self.solver)
-                Logger.log(" "+VerificationStatus.FALSE, 0, not(Logger.level(1)))
                 return (t, model)
             else:
                 Logger.log("No counterexample found with k=%s"%(t), 1)
@@ -190,6 +188,5 @@ class BMCLTL(BMCTemporal, BMCSafety):
 
             self._pop(self.solver)
                 
-        Logger.log(" "+VerificationStatus.UNK, 0, not(Logger.level(1)))                
         return (k-1, None)
     
