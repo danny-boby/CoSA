@@ -66,8 +66,7 @@ class Modules(object):
                 
                 
         ts = TS(comment)
-        ts.vars = set(vars_)
-        ts.invar = invar
+        ts.vars, ts.invar = set(vars_), invar
         return ts
 
     @staticmethod
@@ -82,8 +81,7 @@ class Modules(object):
         Logger.log(comment, 3)
         invar = EqualsOrIff(in_, out)
         ts = TS(comment)
-        ts.invar = invar
-        ts.vars = set(vars_)
+        ts.vars, ts.invar = set(vars_), invar
         return ts
     
     @staticmethod
@@ -130,8 +128,7 @@ class Modules(object):
                     invar = EqualsOrIff(B2BV(bop(in0, in1)), out)
                 
         ts = TS(comment)
-        ts.invar = invar
-        ts.vars = set(vars_)
+        ts.vars, ts.invar = set(vars_), invar
         return ts
 
     @staticmethod
@@ -148,8 +145,7 @@ class Modules(object):
     
         invar = Iff(op(in0,in1), bout)
         ts = TS(comment)
-        ts.invar = invar
-        ts.vars = set(vars_)
+        ts.vars, ts.invar = set(vars_), invar
         return ts
 
     @staticmethod
@@ -252,8 +248,7 @@ class Modules(object):
                 invar = EqualsOrIff(BVZExt(in_, length), out)
                 
         ts = TS(comment)
-        ts.invar = invar
-        ts.vars = set(vars_)
+        ts.vars, ts.invar = set(vars_), invar
         return ts
     
     @staticmethod
@@ -269,8 +264,7 @@ class Modules(object):
         comment = "Const (out, val) = (" + out.symbol_name() + ", " + str(value) + ")"
         Logger.log(comment, 3)
         ts = TS(comment)
-        ts.invar = invar
-        ts.vars = set([out])
+        ts.vars, ts.invar = set(vars_), invar
         return ts
 
     @staticmethod
@@ -304,8 +298,7 @@ class Modules(object):
             trans = TRUE()
             
         ts = TS(comment)
-        ts.vars = set([clk])
-        ts.state_vars = set([clk])
+        ts.vars, ts.state_vars = set([clk]), set([clk])
         ts.set_behavior(init, trans, invar)
         return ts
 
@@ -441,9 +434,8 @@ class Modules(object):
         
         trans = simplify(trans)
         ts = TS(comment)
+        ts.vars, ts.state_vars = set([v for v in vars_ if v is not None]), set([out])
         ts.set_behavior(init, trans, invar)
-        ts.vars = [v for v in vars_ if v is not None]
-        ts.state_vars = set([out])
         return ts
 
     @staticmethod
@@ -469,8 +461,7 @@ class Modules(object):
             invar = And(Implies(sel0, EqualsOrIff(in0, out)), Implies(sel1, EqualsOrIff(in1, out)))
 
         ts = TS(comment)
-        ts.invar = invar
-        ts.vars = set(vars_)
+        ts.vars, ts.invar = set(vars_), invar
         return ts
 
     @staticmethod
@@ -495,8 +486,7 @@ class Modules(object):
                 out1 = EqualsOrIff(out, BV(1, 1))
             invar = And(Implies(eq, out1), Implies(Not(eq), out0))
         ts = TS(comment)
-        ts.vars = set(vars_)
-        ts.invar = invar
+        ts.vars, ts.invar = set(vars_), invar
         return ts
 
     @staticmethod
@@ -525,8 +515,7 @@ class Modules(object):
             invar = And(Implies(Not(eq), out1), Implies(eq, out0))
 
         ts = TS(comment)
-        ts.vars = set(vars_)
-        ts.invar = invar
+        ts.vars, ts.invar = set(vars_), invar
         return ts
 
     @staticmethod
@@ -553,8 +542,7 @@ class Modules(object):
             invar = And(true_res, false_res)
             
         ts = TS(comment)
-        ts.invar = invar
-        ts.vars = set(vars_)
+        ts.vars, ts.invar = set(vars_), invar
         return ts
 
     @staticmethod
@@ -569,8 +557,7 @@ class Modules(object):
         false_res = Implies(Not(eq_all_ones), EqualsOrIff(out, BV(0,1)))
         invar = And(true_res, false_res)
         ts = TS(comment)
-        ts.invar = invar
-        ts.vars = set(vars_)
+        ts.vars, ts.invar = set(vars_), invar
         return ts
 
     @staticmethod
@@ -582,8 +569,7 @@ class Modules(object):
         Logger.log(comment, 3)
         invar = EqualsOrIff(BVExtract(in_, low, high), out)
         ts = TS(comment)
-        ts.invar = invar
-        ts.vars = set([in_, out])
+        ts.vars, ts.invar = set([in_, out]), invar
         return ts
 
     @staticmethod
@@ -651,10 +637,8 @@ class Modules(object):
 
         trans = simplify(trans)
         ts = TS(comment)
+        ts.vars, ts.state_vars, ts.logic = set([v for v in vars_ if v is not None]), set([arr]), L_ABV
         ts.set_behavior(init, trans, invar)
-        ts.vars = [v for v in vars_ if v is not None]
-        ts.state_vars = set([arr])
-        ts.logic = L_ABV
         return ts
 
     def Term(_in):

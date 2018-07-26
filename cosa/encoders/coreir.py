@@ -427,11 +427,10 @@ class CoreIRParser(ModelParser):
         for var in interface:
             varname = SELF+SEP+var[0]
             bvvar = self.BVVar(varname, var[1].size)
-            hts.add_var(bvvar)
             if(var[1].is_input()):
-                hts.inputs.add(bvvar)
+                hts.add_input_var(bvvar)
             else:
-                hts.outputs.add(bvvar)
+                hts.add_output_var(bvvar)
 
             # Adding clock behavior
             if (self.CLK in var[0].lower()) and (var[1].is_input()):
@@ -577,7 +576,7 @@ class CoreIRParser(ModelParser):
             Logger.log(str(EqualsOrIff(first, second)), 3)
 
         ts = TS("Connections")
-        ts.set_behavior(TRUE(), TRUE(), eq_formula)
+        ts.invar = eq_formula
         ts.vars = eq_vars
 
         hts.add_ts(ts)

@@ -24,11 +24,11 @@ class HTS(object):
     tss = None
     subs = None
     name = None
-    inputs = None
-    outputs = None
     vars = None
     params = None
     state_vars = None
+    input_vars = None
+    output_vars = None
     assumptions = None
     lemmas = None
 
@@ -44,10 +44,11 @@ class HTS(object):
         self.subs = set([])
         self.vars = set([])
         self.params = []
-        self.state_vars = set([])
         self.name = name
-        self.inputs = set([])
-        self.outputs = set([])
+        self.state_vars = set([])
+        self.input_vars = set([])
+        self.output_vars = set([])
+        
         self.assumptions = None
         self.lemmas = None
 
@@ -64,6 +65,14 @@ class HTS(object):
     def add_param(self, param):
         self.params.append(param)
         self.vars.add(param)
+
+    def add_input_var(self, var):
+        self.input_vars.add(var)
+        self.vars.add(var)
+
+    def add_output_var(self, var):
+        self.output_vars.add(var)
+        self.vars.add(var)
         
     def update_logic(self, logic):
         if (self.logic == L_BV) and (logic == L_ABV):
@@ -100,7 +109,7 @@ class HTS(object):
         self.lemmas.add(lemma)
         
     def is_input(self, var):
-        return var in self.inputs
+        return var in self.input_vars
         
     def remove_invars(self):
         for ts in self.tss:
@@ -148,11 +157,11 @@ class HTS(object):
         for v in other_hts.state_vars:
             self.state_vars.add(v)
             
-        for v in other_hts.inputs:
-            self.inputs.add(v)
+        for v in other_hts.input_vars:
+            self.input_vars.add(v)
 
-        for v in other_hts.outputs:
-            self.outputs.add(v)
+        for v in other_hts.output_vars:
+            self.output_vars.add(v)
 
         for v in other_hts.vars:
             self.vars.add(v)
@@ -252,12 +261,12 @@ class HTS(object):
         stat.append("  StateVars:\t%s"%(len(self.state_vars)))
         if detailed:
             stat.append(type_vars(self.state_vars, "   - "))
-        stat.append("  Inputs:\t%s"%(len(self.inputs)))
+        stat.append("  Inputs:\t%s"%(len(self.input_vars)))
         if detailed:
-            stat.append(type_vars(self.inputs, "   - "))
-        stat.append("  Outputs:\t%s"%(len(self.outputs)))
+            stat.append(type_vars(self.input_vars, "   - "))
+        stat.append("  Outputs:\t%s"%(len(self.output_vars)))
         if detailed:
-            stat.append(type_vars(self.outputs, "   - "))
+            stat.append(type_vars(self.output_vars, "   - "))
         return "\n".join(stat)
     
 class TS(object):

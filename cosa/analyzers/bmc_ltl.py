@@ -136,7 +136,7 @@ class BMCLTL(BMCTemporal, BMCSafety):
         if all_vars:
             relevant_vars = hts.vars
         else:
-            relevant_vars = hts.state_vars | hts.inputs | hts.outputs
+            relevant_vars = hts.state_vars | hts.input_vars | hts.output_vars
         
         init = hts.single_init()
         trans = hts.single_trans()

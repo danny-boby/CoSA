@@ -110,11 +110,11 @@ class Miter(object):
                 
         miter_out = Symbol(EQS, BOOL)
 
-        inputs = hts.inputs.intersection(hts2.inputs)
-        outputs = hts.outputs.intersection(hts2.outputs)
+        inputs = hts.input_vars.intersection(hts2.input_vars)
+        outputs = hts.output_vars.intersection(hts2.output_vars)
 
-        htseq.inputs = set([TS.get_prefix(v, S1) for v in hts.inputs]).union(set([TS.get_prefix(v, S2) for v in hts2.inputs]))
-        htseq.outputs = set([TS.get_prefix(v, S1) for v in hts.outputs]).union(set([TS.get_prefix(v, S2) for v in hts2.outputs]))
+        htseq.input_vars = set([TS.get_prefix(v, S1) for v in hts.input_vars]).union(set([TS.get_prefix(v, S2) for v in hts2.input_vars]))
+        htseq.output_vars = set([TS.get_prefix(v, S1) for v in hts.output_vars]).union(set([TS.get_prefix(v, S2) for v in hts2.output_vars]))
 
         if symbolic_init or (not non_deterministic):
             states = hts.state_vars.intersection(hts2.state_vars)
@@ -152,7 +152,7 @@ class Miter(object):
 
         tsmo = TS()
         tsmo.vars = set([miter_out])
-        ts.invar = invar
+        tsmo.invar = invar
         htseq.add_ts(tsmo)
 
         return (htseq, miter_out)
