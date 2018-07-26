@@ -147,7 +147,10 @@ class BTOR2Parser(object):
                 nodemap[nid] = BV(bin_to_dec(nids[1]), width)
                 
             if ntype in [STATE, INPUT]:
-                nodemap[nid] = Symbol((SN%nid), getnode(nids[0]))
+                if len(nids) > 1:
+                    nodemap[nid] = Symbol(nids[1], getnode(nids[0]))
+                else:
+                    nodemap[nid] = Symbol((SN%nid), getnode(nids[0]))
                 if ntype == INPUT:
                     ts.add_input_var(nodemap[nid])
                 else:
