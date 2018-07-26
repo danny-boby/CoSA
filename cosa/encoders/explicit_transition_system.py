@@ -185,8 +185,8 @@ class ExplicitTSParser(object):
         vars_ += get_free_variables(invar)
 
         invar = And(invar, BVULE(stateid_var, BV(count-1, stateid_width)))
-        ts = TS(set(vars_), init, trans, invar)
-        ts.comment = "Additional system"
+        ts = TS("Additional system")
+        ts.set_behavior(init, trans, invar)
 
         hts = HTS("ETS")
         hts.add_ts(ts)

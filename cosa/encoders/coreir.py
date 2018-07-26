@@ -257,7 +257,9 @@ class CoreIRParser(ModelParser):
             (enc, formal) = self.enc_map[enc_val]
             remap = dict(join(formal, actual))
             self.subwalker.set_substitute_map(remap)
-            ts = TS(set_remap(enc.vars, remap), self.subwalker.walk(enc.init), self.subwalker.walk(enc.trans), self.subwalker.walk(enc.invar))
+            ts = TS()
+            ts.vars = set_remap(enc.vars, remap)
+            ts.set_behavior(self.subwalker.walk(enc.init), self.subwalker.walk(enc.trans), self.subwalker.walk(enc.invar))
             return ts
 
         ret = self.mod_map[inst_type][0](*args)
@@ -574,8 +576,9 @@ class CoreIRParser(ModelParser):
 
             Logger.log(str(EqualsOrIff(first, second)), 3)
 
-        ts = TS(eq_vars, TRUE(), TRUE(), eq_formula)
-        ts.comment = "Connections" # (%s, %s)"%(SEP.join(first_selectpath), SEP.join(second_selectpath))
+        ts = TS("Connections")
+        ts.set_behavior(TRUE(), TRUE(), eq_formula)
+        ts.vars = eq_vars
 
         hts.add_ts(ts)
 

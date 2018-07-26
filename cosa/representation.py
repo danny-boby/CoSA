@@ -61,24 +61,9 @@ class HTS(object):
     def add_sub(self, name, sub, parameters):
         self.subs.add((name, parameters, sub))
 
-    def add_var(self, var):
-        self.vars.add(var)
-
     def add_param(self, param):
         self.params.append(param)
         self.vars.add(param)
-        
-    def add_state_var(self, var):
-        self.state_vars.add(var)
-        self.vars.add(var)
-
-    def add_input_var(self, var):
-        self.inputs.add(var)
-        self.vars.add(var)
-
-    def add_output_var(self, var):
-        self.outputs.add(var)
-        self.vars.add(var)
         
     def update_logic(self, logic):
         if (self.logic == L_BV) and (logic == L_ABV):
@@ -95,6 +80,10 @@ class HTS(object):
             self.vars.add(v)
         for v in ts.state_vars:
             self.state_vars.add(v)
+        for v in ts.input_vars:
+            self.input_vars.add(v)
+        for v in ts.output_vars:
+            self.output_vars.add(v)
             
         self.update_logic(ts.logic)
 
@@ -186,10 +175,9 @@ class HTS(object):
         for sub in self.subs:
             instance, actual, module = sub
             formal = module.params
-            
-            (init, trans, invar) = module.flatten(path+[instance])
-            ts = TS(set([]), init, trans, invar)
-            ts.comment = "FLATTEN"
+
+            ts = TS("FLATTEN")
+            (ts.init, ts.trans, ts.invar) = module.flatten(path+[instance])
             self.add_ts(ts)
 
             links = TRUE()
@@ -198,8 +186,8 @@ class HTS(object):
                 module_var = sub[2].newname(formal[i].symbol_name(), path+[sub[0]])
                 links = And(links, EqualsOrIff(vardic[local_var], vardic[module_var]))
                 
-            ts = TS(set([]), TRUE(), TRUE(), links)
-            ts.comment = "LINKS"
+            ts = TS("LINKS")
+            ts.invar = links
             self.add_ts(ts)
 
         s_init = self.single_init()
@@ -276,6 +264,8 @@ class TS(object):
 
     vars = None
     state_vars = None
+    input_vars = None
+    output_vars = None
     init = None
     trans = None
     invar = None
@@ -283,14 +273,16 @@ class TS(object):
     comment = None
     logic = None
 
-    def __init__(self, vars, init, trans, invar):
-        self.vars = vars
+    def __init__(self, comment=""):
+        self.vars = set([])
         self.state_vars = set([])
-        self.init = init
-        self.trans = trans
-        self.invar = invar
+        self.input_vars = set([])
+        self.output_vars = set([])
+        self.init = TRUE()
+        self.trans = TRUE()
+        self.invar = TRUE()
 
-        self.comment = ""
+        self.comment = comment
         self.logic = L_BV
 
     def __repr__(self):
@@ -303,6 +295,23 @@ class TS(object):
 
         self.invar = None
 
+    def set_behavior(self, init, trans, invar):
+        self.init = init
+        self.trans = trans
+        self.invar = invar
+        
+    def add_state_var(self, var):
+        self.state_vars.add(var)
+        self.vars.add(var)
+
+    def add_input_var(self, var):
+        self.input_vars.add(var)
+        self.vars.add(var)
+
+    def add_output_var(self, var):
+        self.output_vars.add(var)
+        self.vars.add(var)
+        
     @staticmethod
     def is_prime(v):
         return v.symbol_name()[-len(NEXT):] == NEXT
