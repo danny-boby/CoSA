@@ -167,7 +167,7 @@ class BMCSafety(BMCSolver):
                     if R == init_0:
                         Logger.log("Counterexample found with k=%s"%(t), 1)
                         model = self._get_model(self.solver)
-                        Logger.log("", 0, not(Logger.level(1)))
+                        Logger.log(" "+VerificationStatus.FALSE, 0, not(Logger.level(1)))
                         return (t, model)
                     else:
                         Logger.log("No counterexample or proof found with k=%s"%(t), 1)
@@ -195,7 +195,7 @@ class BMCSafety(BMCSolver):
                     Logger.log("Extending initial states (%s)"%int_c, 1)
 
             t += 1
-        Logger.log("", 0, not(Logger.level(1)))
+        Logger.log(" "+VerificationStatus.UNK, 0, not(Logger.level(1)))
 
         return (t-1, None)
     
@@ -226,14 +226,14 @@ class BMCSafety(BMCSolver):
             if self._solve(self.solver):
                 Logger.log("Counterexample found with k=%s"%(t), 1)
                 model = self._get_model(self.solver)
-                Logger.log("", 0, not(Logger.level(1)))
+                Logger.log(" "+VerificationStatus.FALSE, 0, not(Logger.level(1)))
                 return (t, model)
             else:
                 Logger.log("No counterexample found with k=%s"%(t), 1)
                 Logger.msg(".", 0, not(Logger.level(1)))
 
             t += 1
-        Logger.log("", 0, not(Logger.level(1)))
+        Logger.log(" "+VerificationStatus.UNK, 0, not(Logger.level(1)))
 
         return (t-1, None)
     
@@ -413,7 +413,7 @@ class BMCSafety(BMCSolver):
                 if self._solve(self.solver):
                     Logger.log("Counterexample found with k=%s"%(t), 1)
                     model = self._get_model(self.solver)
-                    Logger.log("", 0, not(Logger.level(1)))
+                    Logger.log(" "+VerificationStatus.FALSE, 0, not(Logger.level(1)))
                     return (t, model)
                 else:
                     Logger.log("No counterexample found with k=%s"%(t), 1)
@@ -442,7 +442,7 @@ class BMCSafety(BMCSolver):
                         Logger.log("Induction (I & lF) failed with k=%s"%(t), 1)
                     else:
                         Logger.log("Induction (I & lF) holds with k=%s"%(t), 1)
-                        Logger.log("", 0, not(Logger.level(1)))
+                        Logger.log(" "+VerificationStatus.TRUE, 0, not(Logger.level(1)))
                         return (t, True)
 
                     self._pop(self.solver)
@@ -459,7 +459,7 @@ class BMCSafety(BMCSolver):
                         Logger.log("Induction (lF & !P) failed with k=%s"%(t), 1)
                     else:
                         Logger.log("Induction (lF & !P) holds with k=%s"%(t), 1)
-                        Logger.log("", 0, not(Logger.level(1)))
+                        Logger.log(" "+VerificationStatus.TRUE, 0, not(Logger.level(1)))
                         return (t, True)
 
                     self._pop(self.solver_ind)
@@ -474,7 +474,7 @@ class BMCSafety(BMCSolver):
                     
             t += 1
             
-        Logger.log("", 0, not(Logger.level(1)))
+        Logger.log(" "+VerificationStatus.UNK, 0, not(Logger.level(1)))
 
         return (t-1, None)
 
@@ -503,7 +503,7 @@ class BMCSafety(BMCSolver):
             if self._solve(self.solver):
                 Logger.log("Counterexample found with k=%s"%(t), 1)
                 model = self._get_model(self.solver)
-                Logger.log("", 0, not(Logger.level(1)))
+                Logger.log(" "+VerificationStatus.FALSE, 0, not(Logger.level(1)))
                 return (t, model)
             else:
                 Logger.log("No counterexample found with k=%s"%(t), 1)
@@ -520,7 +520,7 @@ class BMCSafety(BMCSolver):
                 Logger.log("Add property at time %d"%t, 2)
 
             t += 1
-        Logger.log("", 0, not(Logger.level(1)))
+        Logger.log(" "+VerificationStatus.UNK, 0, not(Logger.level(1)))
 
         return (t-1, None)
 
@@ -559,7 +559,7 @@ class BMCSafety(BMCSolver):
             if self._solve(self.solver):
                 Logger.log("Counterexample found with k=%s"%(t), 1)
                 model = self._get_model(self.solver)
-                Logger.log("", 0, not(Logger.level(1)))
+                Logger.log(" "+VerificationStatus.FALSE, 0, not(Logger.level(1)))
                 return (t, model)
             else:
                 Logger.log("No counterexample found with k=%s"%(t), 1)
@@ -575,7 +575,7 @@ class BMCSafety(BMCSolver):
             self._add_assertion(self.solver, trans_t)
 
             t += 1
-        Logger.log("", 0, not(Logger.level(1)))
+        Logger.log(" "+VerificationStatus.UNK, 0, not(Logger.level(1)))
 
         return (t-1, None)
 

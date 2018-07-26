@@ -127,7 +127,7 @@ class BMCTemporal(BMCSolver):
                 if self._solve(self.solver):
                     Logger.log("Counterexample found with k=%s"%(t), 1)
                     model = self._get_model(self.solver)
-                    Logger.log("", 0, not(Logger.level(1)))
+                    Logger.log(" "+VerificationStatus.FALSE, 0, not(Logger.level(1)))
                     return (t, model)
                 else:
                     Logger.log("No counterexample found with k=%s"%(t), 1)
@@ -170,7 +170,7 @@ class BMCTemporal(BMCSolver):
                             Logger.log("K-Liveness failed with k=%s"%(t), 1)
                         else:
                             Logger.log("K-Liveness holds with k=%s"%(t), 1)
-                            Logger.log("", 0, not(Logger.level(1)))
+                            Logger.log(" "+VerificationStatus.TRUE, 0, not(Logger.level(1)))
                             return (t, True)
 
                 else:
@@ -192,7 +192,7 @@ class BMCTemporal(BMCSolver):
                 Logger.log("Add property at time %d"%t, 2)
                 
             t += 1
-        Logger.log("", 0, not(Logger.level(1)))
+        Logger.log(" "+VerificationStatus.UNK, 0, not(Logger.level(1)))
                 
         return (t-1, None)
 
