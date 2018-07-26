@@ -85,7 +85,8 @@ class BTOR2Parser(object):
     
     def parse_string(self, strinput):
 
-        hts = HTS("")
+        hts = HTS()
+        ts = TS()
 
         nodemap = {}
 
@@ -148,9 +149,9 @@ class BTOR2Parser(object):
             if ntype in [STATE, INPUT]:
                 nodemap[nid] = Symbol((SN%nid), getnode(nids[0]))
                 if ntype == INPUT:
-                    hts.add_input_var(nodemap[nid])
+                    ts.add_input_var(nodemap[nid])
                 else:
-                    hts.add_state_var(nodemap[nid])
+                    ts.add_state_var(nodemap[nid])
 
             if ntype == AND:
                 nodemap[nid] = BVAnd(getnode(nids[1]), getnode(nids[2]))
@@ -229,6 +230,7 @@ class BTOR2Parser(object):
         trans = And(translist)
         invar = And(invarlist)
 
-        hts.add_ts(TS(hts.vars, init, trans, invar))
+        ts.set_behavior(init, trans, invar)
+        hts.add_ts(ts)
 
         return (hts, invar_props, ltl_props)

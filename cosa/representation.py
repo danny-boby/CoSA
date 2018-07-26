@@ -39,7 +39,7 @@ class HTS(object):
     logic = None
     en_simplify = False
     
-    def __init__(self, name):
+    def __init__(self, name=""):
         self.tss = set([])
         self.subs = set([])
         self.vars = set([])
