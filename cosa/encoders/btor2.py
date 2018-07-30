@@ -8,7 +8,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pysmt.shortcuts import Not, TRUE, And, BVNot, BVAnd, BVOr, BVAdd, Or, Symbol, BV, EqualsOrIff, Implies, BVMul, BVExtract, BVUGT, BVULT, BVULE, Ite, BVZExt, BVXor, BVConcat, get_type, BVSub
+from pysmt.shortcuts import Not, TRUE, And, BVNot, BVAnd, BVOr, BVAdd, Or, Symbol, BV, EqualsOrIff, \
+    Implies, BVMul, BVExtract, BVUGT, BVULT, BVULE, Ite, BVZExt, BVXor, BVConcat, get_type, BVSub, Xor
 from pysmt.typing import BOOL, BVType, ArrayType
 
 from cosa.representation import HTS, TS
@@ -101,6 +102,16 @@ class BTOR2Parser(object):
             if int(nid) < 0:
                 return Ite(BV2B(nodemap[str(-int(nid))]), BV(0,1), BV(1,1))
             return nodemap[nid]
+
+        def binary_op(bvop, bop, left, right):
+            if (get_type(left) == BOOL) and (get_type(right) == BOOL):
+                return bop(left, right)
+            return bvop(B2BV(left), B2BV(right))
+
+        def unary_op(bvop, bop, left):
+            if (get_type(left) == BOOL):
+                return bop(left)
+            return bvop(left)
         
         for line in strinput.split(NL):
             linetok = line.split()
@@ -157,28 +168,30 @@ class BTOR2Parser(object):
                     ts.add_state_var(nodemap[nid])
 
             if ntype == AND:
-                nodemap[nid] = BVAnd(B2BV(getnode(nids[1])), B2BV(getnode(nids[2])))
+                nodemap[nid] = binary_op(BVAnd, And, getnode(nids[1]), getnode(nids[2]))
 
             if ntype == CONCAT:
                 nodemap[nid] = BVConcat(B2BV(getnode(nids[1])), B2BV(getnode(nids[2])))
                 
             if ntype == XOR:
-                nodemap[nid] = BVXor(B2BV(getnode(nids[1])), B2BV(getnode(nids[2])))
+                nodemap[nid] = binary_op(BVXor, Xor, getnode(nids[1]), getnode(nids[2]))
                 
             if ntype == NAND:
-                nodemap[nid] = BVNot(BVAnd(B2BV(getnode(nids[1])), B2BV(getnode(nids[2]))))
-
-            if ntype == UEXT:
-                nodemap[nid] = BVZExt(B2BV(getnode(nids[1])), int(nids[2]))
+                bvop = lambda x,y: BVNot(BVAnd(x, y))
+                bop = lambda x,y: Not(And(x, y))
+                nodemap[nid] = binary_op(bvop, bop, getnode(nids[1]), getnode(nids[2]))
 
             if ntype == IMPLIES:
                 nodemap[nid] = Implies(BV2B(getnode(nids[1])), BV2B(getnode(nids[2])))
-
+                
             if ntype == NOT:
-                nodemap[nid] = BVNot(B2BV(getnode(nids[1])))
+                nodemap[nid] = unary_op(BVNot, Not, getnode(nids[1]))
+                
+            if ntype == UEXT:
+                nodemap[nid] = BVZExt(B2BV(getnode(nids[1])), int(nids[2]))
                 
             if ntype == OR:
-                nodemap[nid] = BVOr(B2BV(getnode(nids[1])), B2BV(getnode(nids[2])))
+                nodemap[nid] = binary_op(BVOr, Or, getnode(nids[1]), getnode(nids[2]))
                 
             if ntype == ADD:
                 nodemap[nid] = BVAdd(B2BV(getnode(nids[1])), B2BV(getnode(nids[2])))
