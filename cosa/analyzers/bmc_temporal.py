@@ -172,14 +172,16 @@ class BMCTemporal(BMCSolver):
                             return (t, True)
 
                 else:
-                    self._push(self.solver_klive)
-                    self._add_assertion(self.solver_klive, self.at_time(prop, 0))
-                    res = self._solve(self.solver_klive)
-                    self._pop(self.solver_klive)
-                    if res:
-                        self._add_assertion(self.solver_klive, self.at_time(prop, 0))
-                    else:
-                        self._add_assertion(self.solver_klive, self.at_time(Not(prop), 0))
+                    self._add_assertion(self.solver_klive, self.at_time(Not(prop), 0))
+
+                    # self._push(self.solver_klive)
+                    # self._add_assertion(self.solver_klive, self.at_time(prop, 0))
+                    # res = self._solve(self.solver_klive)
+                    # self._pop(self.solver_klive)
+                    # if res:
+                    #     self._add_assertion(self.solver_klive, self.at_time(prop, 0))
+                    # else:
+                    #     self._add_assertion(self.solver_klive, self.at_time(Not(prop), 0))
                         
             trans_t = self.unroll(trans, invar, t+1, t)
             self._add_assertion(self.solver, trans_t)
