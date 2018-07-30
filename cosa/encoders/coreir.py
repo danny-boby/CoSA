@@ -28,6 +28,8 @@ CR = "_const_replacement"
 RCR = "_reg_const_replacement"
 SELF = "self"
 
+NEW_VERSION = True
+
 class CoreIRModelFlags(ModelFlags):
     FC_LEMMAS = "FC-LEMMAS"
 
@@ -324,7 +326,10 @@ class CoreIRParser(ModelParser):
                     xval = 1 if xval else 0
                 else:
                     if type(xval) != int:
-                        xval = xval.unsigned_value
+                        if NEW_VERSION:
+                            xval = xval.unsigned_value
+                        else:
+                            xval = xval.val
 
                 return xval
 
