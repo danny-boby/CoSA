@@ -1,9 +1,12 @@
 VAR
 clk: BV(1);
-counter_1: Counter(clk);
-counter_2: Counter(clk);
+rst: BV(1);
+init1: BV(8);
+init2: BV(8);
+counter_1: Counter(clk, rst, init1);
+counter_2: Counter(clk, rst, init2);
 adder: Adder(counter_1.output, counter_2.output);
-output: BV(16);
+output: BV(8);
 
 INIT
 clk = 0_1;
@@ -13,22 +16,25 @@ TRANS
 
 INVAR
 output = adder.output;
+init1 = 0_8;
+init2 = 3_8;
 
 
-DEF Adder(in1: BV(16), in2: BV(16)):
+DEF Adder(in1: BV(8), in2: BV(8)):
   VAR
-  output: BV(16);
+  output: BV(8);
 
   INVAR
   output = (in1 + in2);
   
-DEF Counter(clk: BV(1)):
+DEF Counter(clk: BV(1), rst: BV(1), initval: BV(8)):
   VAR
-  output: BV(16);
+  output: BV(8);
 
   INIT
-  output = 0_16;
+  output = 0_8;
 
   TRANS
-  ((next(clk) = 1_1) & (clk = 0_1)) -> (next(output) = (output + 1_16));
-  ((next(clk) = 0_1) & (clk = 1_1)) -> (next(output) = (output));
+  (((next(clk) = 1_1) & (clk = 0_1)) & !((next(rst) = 1_1) & (rst = 0_1))) -> (next(output) = (output + 1_8));
+  (((next(clk) = 0_1) & (clk = 1_1)) & !((next(rst) = 1_1) & (rst = 0_1))) -> (next(output) = (output));
+  ((next(rst) = 1_1) & (rst = 0_1)) -> (next(output) = initval);
