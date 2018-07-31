@@ -97,26 +97,22 @@ class BMCSafety(BMCSolver):
 
         hts.reset_formulae()
 
-        if self.config.strategy == VerificationStrategy.ALL:
-            res = self.solve_safety_inc_fwd(hts, prop, k, k_min)
-            if res[1] is not None:
-                return res
-            if not self.config.prove:
-                res = self.solve_safety_inc_bwd(hts, prop, k)
-                if res[1] is not None:
-                    return res
-                res = self.solve_safety_inc_zz(hts, prop, k)
-                if res[1] is not None:
-                    return res
-            res = self.solve_safety_int(hts, prop, k)
-            return res
-        
         if self.config.incremental:
             return self.solve_safety_inc(hts, prop, k, k_min)
 
         return self.solve_safety_ninc(hts, prop, k)
 
     def solve_safety_ninc(self, hts, prop, k):
+        if self.config.strategy == VerificationStrategy.ALL:
+            res = self.solve_safety_fwd(hts, prop, k)
+            if res[1] is not None:
+                return res
+            if self.config.prove:
+                res = self.solve_safety_int(hts, prop, k)
+                if res[1] is not None:
+                    return res
+            return res
+        
         if self.config.strategy in [VerificationStrategy.FWD, VerificationStrategy.AUTO]:
             return self.solve_safety_fwd(hts, prop, k)
 
@@ -128,6 +124,22 @@ class BMCSafety(BMCSolver):
         return None
     
     def solve_safety_inc(self, hts, prop, k, k_min):
+        if self.config.strategy == VerificationStrategy.ALL:
+            res = self.solve_safety_inc_fwd(hts, prop, k, k_min)
+            if res[1] is not None:
+                return res
+            if self.config.prove:
+                res = self.solve_safety_int(hts, prop, k)
+                if res[1] is not None:
+                    return res
+            res = self.solve_safety_inc_bwd(hts, prop, k)
+            if res[1] is not None:
+                self.config.strategy == VerificationStrategy.BWD
+                return res
+            res = self.solve_safety_inc_zz(hts, prop, k)
+            self.config.strategy == VerificationStrategy.ZZ
+            return res
+
         if self.config.strategy in [VerificationStrategy.FWD, VerificationStrategy.AUTO]:
             return self.solve_safety_inc_fwd(hts, prop, k, k_min)
 

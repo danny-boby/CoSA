@@ -154,7 +154,8 @@ class BMCSolver(object):
                                     VerificationStrategy.FWD, \
                                     VerificationStrategy.NU, \
                                     VerificationStrategy.INT, \
-                                    VerificationStrategy.LTL]:
+                                    VerificationStrategy.LTL,
+                                    VerificationStrategy.ALL]:
             return self._remap_model_fwd(vars, model, k)
 
         Logger.error("Invalid configuration strategy")
