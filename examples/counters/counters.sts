@@ -11,15 +11,15 @@ output: BV(8);
 
 INIT
 clk1 = 0_1;
-clk2 = 1_1;
+clk2 = 0_1;
 
 TRANS
 # Clock Behavior
 (clk1 = 0_1) <-> (next(clk1) = 1_1);
 (clk2 = 0_1) <-> (next(clk2) = 1_1);
 
-# We reset when output > 16
-((output > 16_8) -> ((rst = 0_1) & (next(rst) = 1_1)));
+# We reset when output > 10
+((output > 10_8) -> ((rst = 0_1) & (next(rst) = 1_1)));
 
 # We allow a reset only when output > 1
 (rst = 0_1) & (next(rst) = 1_1) -> (output > 1_8);
@@ -27,7 +27,7 @@ TRANS
 INVAR
 output = adder.output;
 init1 = 0_8;
-init2 = 3_8;
+init2 = 2_8;
 
 DEF Adder(in1: BV(8), in2: BV(8)):
   VAR
