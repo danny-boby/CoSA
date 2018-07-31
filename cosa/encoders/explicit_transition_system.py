@@ -118,14 +118,21 @@ class ExplicitTSParser(object):
 
         states = {}
         assigns = set([])
+        varsmap = {}
+
+        def def_var(name, vtype):
+            if name in varsmap:
+                return varsmap[name]
+            var = Symbol(name, vtype)
+            ts.add_state_var(var)
+            return var
         
         for line in lines:
             if line.comment:
                 continue
             if line.init:
                 (value, typev) = self.__get_value(line.init.value)
-                ivar = Symbol(line.init.varname, typev)
-                ts.add_state_var(ivar)
+                ivar = def_var(line.init.varname, typev)
 
                 if T_I not in states:
                     states[T_I] = TRUE()
@@ -138,8 +145,7 @@ class ExplicitTSParser(object):
                 sname = T_S + line.state.id
                 if line.state.value != T_TRUE:
                     (value, typev) = self.__get_value(line.state.value)
-                    ivar = Symbol(line.state.varname, typev)
-                    ts.add_state_var(ivar)
+                    ivar = def_var(line.state.varname, typev)
                     state = EqualsOrIff(ivar, value)
 
                     assval = (sname, line.state.varname)
