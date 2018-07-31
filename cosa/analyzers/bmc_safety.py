@@ -96,7 +96,21 @@ class BMCSafety(BMCSolver):
                 return (0, True)
 
         hts.reset_formulae()
-            
+
+        if self.config.strategy == VerificationStrategy.ALL:
+            res = self.solve_safety_inc_fwd(hts, prop, k, k_min)
+            if res[1] is not None:
+                return res
+            if not self.config.prove:
+                res = self.solve_safety_inc_bwd(hts, prop, k)
+                if res[1] is not None:
+                    return res
+                res = self.solve_safety_inc_zz(hts, prop, k)
+                if res[1] is not None:
+                    return res
+            res = self.solve_safety_int(hts, prop, k)
+            return res
+        
         if self.config.incremental:
             return self.solve_safety_inc(hts, prop, k, k_min)
 
@@ -122,7 +136,12 @@ class BMCSafety(BMCSolver):
 
         if self.config.strategy == VerificationStrategy.ZZ:
             return self.solve_safety_inc_zz(hts, prop, k)
-        
+            
+        # Redirecting strategy selection error
+        if self.config.strategy == VerificationStrategy.INT:
+            Logger.warning("Interpolation is not available in incremental mode. Switching to not incremental")
+            return self.solve_safety_ninc(hts, prop, k)
+            
         Logger.error("Invalid configuration strategy")
 
         return None

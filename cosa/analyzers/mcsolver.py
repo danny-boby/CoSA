@@ -29,6 +29,7 @@ class VerificationStrategy(object):
     INT  = "INT"
     LTL  = "LTL"
     AUTO = "AUTO"
+    ALL = "ALL"
 
 class MCConfig(object):
 
@@ -68,6 +69,7 @@ class MCConfig(object):
         strategies.append((VerificationStrategy.INT,  "Interpolation (not incremental only)"))
         strategies.append((VerificationStrategy.NU,   "States picking without unrolling (only for simulation)"))
         strategies.append((VerificationStrategy.LTL,  "Pure LTL verification (without optimizations)"))
+        strategies.append((VerificationStrategy.ALL,  "Use all techniques"))
 
         return strategies
 
