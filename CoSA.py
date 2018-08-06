@@ -53,6 +53,8 @@ class Config(object):
     symbolic_init = None
     fsm_check = False
     full_trace = False
+    trace_vars_change = False
+    trace_all_vars = False
     prefix = None
     run_passes = False
     printer = None
@@ -88,6 +90,8 @@ class Config(object):
         self.symbolic_init = False
         self.fsm_check = False
         self.full_trace = False
+        self.trace_vars_change = False
+        self.trace_all_vars = False
         self.prefix = None
         self.run_passes = False
         self.printer = PrintersFactory.get_default().get_name()
@@ -202,6 +206,8 @@ def run_verification(config):
     mc_config.smt2file = config.smt2file
 
     mc_config.full_trace = config.full_trace
+    mc_config.trace_vars_change = config.trace_vars_change
+    mc_config.trace_all_vars = config.trace_all_vars
     mc_config.prefix = config.prefix
     mc_config.strategy = config.strategy
     mc_config.skip_solving = config.skip_solving
@@ -469,10 +475,18 @@ if __name__ == "__main__":
     # enc_params.add_argument('--run-passes', dest='run_passes', action='store_true',
     #                     help='run necessary passes to process the CoreIR file. (Default is \"%s\")'%config.run_passes)
 
+    enc_params.set_defaults(trace_vars_change=config.trace_vars_change)
+    enc_params.add_argument('--trace-vars-change', dest='trace_vars_change', action='store_true',
+                       help="do not omit variables that keep their value in the counterexamples. (Default is \"%s\")"%config.trace_vars_change)
+
+    enc_params.set_defaults(trace_all_vars=config.trace_all_vars)
+    enc_params.add_argument('--trace-all-vars', dest='trace_all_vars', action='store_true',
+                       help="do not omit internal state variables in the counterexamples. (Default is \"%s\")"%config.trace_all_vars)
+
     enc_params.set_defaults(full_trace=config.full_trace)
     enc_params.add_argument('--full-trace', dest='full_trace', action='store_true',
                        help="show all variables in the counterexamples. (Default is \"%s\")"%config.full_trace)
-
+    
     # Printing parameters
 
     print_params = parser.add_argument_group('trace printing')
@@ -542,6 +556,8 @@ if __name__ == "__main__":
     config.bmc_length = args.bmc_length
     config.bmc_length_min = args.bmc_length_min
     config.full_trace = args.full_trace
+    config.trace_vars_change = args.trace_vars_change
+    config.trace_all_vars = args.trace_all_vars
     config.prefix = args.prefix
     config.translate = args.translate
     config.smt2file = args.smt2

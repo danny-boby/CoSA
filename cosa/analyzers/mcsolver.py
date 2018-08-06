@@ -44,7 +44,8 @@ class MCConfig(object):
     vcd_trace = None
     prove = None
     full_trace = False
-    trace_diff_vars = True
+    trace_vars_change = False
+    trace_all_vars = False
 
     def __init__(self):
         self.incremental = True
@@ -57,7 +58,8 @@ class MCConfig(object):
         self.vcd_trace = False
         self.prove = False
         self.full_trace = False
-        self.trace_diff_vars = True
+        self.trace_vars_change = False
+        self.trace_all_vars = False
 
         self.strategies = MCConfig.get_strategies()
 
@@ -435,19 +437,18 @@ class BMCSolver(object):
         if prefix is None:
             prefix = self.config.prefix
 
-        full_trace = self.config.full_trace
+        diff_only = not self.config.trace_vars_change
+        all_vars = self.config.trace_all_vars
 
-        diff_only = self.config.trace_diff_vars
-
-        if Logger.level(1):
+        if self.config.full_trace:
             diff_only = False
-            full_trace = True
-
+            all_vars = True
+        
         # Human Readable Format
         hr_printer = TextTracePrinter()
         hr_printer.extra_vars = xvars
         hr_printer.diff_only = diff_only
-        hr_printer.full_trace = full_trace
+        hr_printer.all_vars = all_vars
         hr_trace = hr_printer.print_trace(hts, model, length, map_function, find_loop)
 
         # VCD format

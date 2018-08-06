@@ -109,10 +109,11 @@ class Problem(object):
     symbolic_init = None
     smt2_tracing = None
 
-    full_trace = True
-    trace_diff_vars = False
+    full_trace = False
+    trace_vars_change = False
+    trace_all_vars = False
     trace_prefix = None
-
+    
     verbosity = None
     description = None
 

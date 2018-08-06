@@ -255,7 +255,7 @@ class TextTracePrinter(TracePrinter):
     def __init__(self):
         self.extra_vars = None
         self.diff_only = True
-        self.full_trace = False
+        self.all_vars = False
 
     def get_file_ext(self):
         return ".txt"
@@ -268,7 +268,7 @@ class TextTracePrinter(TracePrinter):
         
         trace.append("---> INIT <---")
 
-        if self.full_trace:
+        if self.all_vars:
             varlist = list(hts.vars)
         else:
             varlist = list(hts.input_vars.union(hts.output_vars).union(hts.state_vars))

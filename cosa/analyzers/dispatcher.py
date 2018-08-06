@@ -197,7 +197,9 @@ class ProblemSolver(object):
         return (hts, invar_props, ltl_props)
 
     def solve_problems(self, problems, config):
-
+        if len(problems.problems) == 0:
+            Logger.error("No problems defined")
+            
         if VerificationType.LTL in [problem.verification for problem in problems.problems]:
             ltl_reset_env()
         
@@ -236,6 +238,8 @@ class ProblemSolver(object):
         
         mc_config.smt2file = config_selection(problem.smt2_tracing, config.smt2file)
         mc_config.full_trace = problem.full_trace or config.full_trace
+        mc_config.trace_vars_change = problem.trace_vars_change or config.trace_vars_change
+        mc_config.trace_all_vars = problem.trace_all_vars or config.trace_all_vars
         mc_config.prefix = problem.name
         mc_config.strategy = config_selection(problem.strategy, config.strategy)
         mc_config.incremental = config_selection(problem.incremental, config.incremental)
@@ -247,6 +251,5 @@ class ProblemSolver(object):
         mc_config.properties = problem.formula
         mc_config.assumptions = problem.assumptions
         mc_config.lemmas = problem.lemmas
-        mc_config.trace_diff_vars = problem.trace_diff_vars
 
         return mc_config
