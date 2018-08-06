@@ -146,6 +146,7 @@ class ProblemSolver(object):
         for strfile in models:
             (strfile, flags) = self.get_file_flags(strfile)
             filetype = strfile.split(".")[-1]
+            strfile = strfile.replace("~", os.path.expanduser("~"))
             if strfile[0] != "/":
                 strfile = relative_path+strfile
             parser = None
