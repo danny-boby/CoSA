@@ -474,22 +474,22 @@ if __name__ == "__main__":
     # enc_params.set_defaults(run_passes=config.run_passes)
     # enc_params.add_argument('--run-passes', dest='run_passes', action='store_true',
     #                     help='run necessary passes to process the CoreIR file. (Default is \"%s\")'%config.run_passes)
-
-    enc_params.set_defaults(trace_vars_change=config.trace_vars_change)
-    enc_params.add_argument('--trace-vars-change', dest='trace_vars_change', action='store_true',
-                       help="do not omit variables that keep their value in the counterexamples. (Default is \"%s\")"%config.trace_vars_change)
-
-    enc_params.set_defaults(trace_all_vars=config.trace_all_vars)
-    enc_params.add_argument('--trace-all-vars', dest='trace_all_vars', action='store_true',
-                       help="do not omit internal state variables in the counterexamples. (Default is \"%s\")"%config.trace_all_vars)
-
-    enc_params.set_defaults(full_trace=config.full_trace)
-    enc_params.add_argument('--full-trace', dest='full_trace', action='store_true',
-                       help="show all variables in the counterexamples. (Default is \"%s\")"%config.full_trace)
     
     # Printing parameters
 
     print_params = parser.add_argument_group('trace printing')
+
+    print_params.set_defaults(trace_vars_change=config.trace_vars_change)
+    print_params.add_argument('--trace-vars-change', dest='trace_vars_change', action='store_true',
+                       help="show variable assignments in the counterexamples even when unchanged. (Default is \"%s\")"%config.trace_vars_change)
+
+    print_params.set_defaults(trace_all_vars=config.trace_all_vars)
+    print_params.add_argument('--trace-all-vars', dest='trace_all_vars', action='store_true',
+                       help="show all variables in the counterexamples. (Default is \"%s\")"%config.trace_all_vars)
+
+    print_params.set_defaults(full_trace=config.full_trace)
+    print_params.add_argument('--full-trace', dest='full_trace', action='store_true',
+                       help="sets trace-vars-unchanged and trace-all-vars to True. (Default is \"%s\")"%config.full_trace)
     
     print_params.set_defaults(prefix=None)
     print_params.add_argument('--prefix', metavar='<prefix location>', type=str, required=False,
