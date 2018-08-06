@@ -127,7 +127,7 @@ class ProblemSolver(object):
         if problem.assumptions is not None:
             problem.hts.assumptions = None
 
-        Logger.log("\n*** Result for problem \"%s\" is %s ***"%(problem, res), 1)
+        Logger.log("\n*** Problem \"%s\" is %s ***"%(problem, res), 1)
 
     def get_file_flags(self, strfile):
         if FLAG_SR not in strfile:
@@ -221,7 +221,7 @@ class ProblemSolver(object):
                 timer_solve = Logger.start_timer("Problem %s"%problem.name, False)
             try:
                 self.solve_problem(problem, config)
-                Logger.msg(" %s\n"%problem.status, 0)
+                Logger.msg(" %s\n"%problem.status, 0, not(Logger.level(1)))
                 
                 if config.time or problems.time:
                     problem.time = Logger.get_timer(timer_solve, False)

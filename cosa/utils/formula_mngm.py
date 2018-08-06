@@ -75,7 +75,7 @@ def quote_names(strformula, prefix=None):
         lst_names.append(prefix)
     strformula = strformula.replace("\\","")
 
-    lits = [x for x in list(re.findall("([a-zA-Z][a-zA-Z_$\.0-9]*)+", strformula)) if x not in KEYWORDS]
+    lits = [x for x in list(re.findall("([a-zA-Z][a-zA-Z_$\.0-9\[\]]*)+", strformula)) if x not in KEYWORDS]
     lits.sort()
 
     repl_lst = []

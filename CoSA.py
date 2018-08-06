@@ -350,13 +350,15 @@ def run_problems(problems, config):
         Logger.log("\n** Problem %s **"%(pbm.name), 0)
         Logger.log("Description: %s"%(pbm.description), 0)
         Logger.log("Result: %s%s"%(pbm.status, unk_k), 0)
+
+        prefix = config.prefix if config.prefix is not None else pbm.trace_prefix
         
         list_status.append(pbm.status)
         if (pbm.verification != VerificationType.SIMULATION) and (pbm.status == VerificationStatus.FALSE):
-            print_trace("Counterexample", pbm.trace, pbm.name, config.prefix)
+            print_trace("Counterexample", pbm.trace, pbm.name, prefix)
 
         if (pbm.verification == VerificationType.SIMULATION) and (pbm.status == VerificationStatus.TRUE):
-            print_trace("Execution", pbm.trace, pbm.name, config.prefix)
+            print_trace("Execution", pbm.trace, pbm.name, prefix)
 
         if pbm.time:
             Logger.log("Time: %.2f sec"%(pbm.time), 0)
