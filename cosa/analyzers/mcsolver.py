@@ -36,7 +36,6 @@ class MCConfig(object):
     incremental = True
     strategy = None
     solver = None
-    full_trace = False
     prefix = None
     smt2file = None
     simplify = False
@@ -44,18 +43,21 @@ class MCConfig(object):
     solver_name = None
     vcd_trace = None
     prove = None
+    full_trace = False
+    trace_diff_vars = True
 
     def __init__(self):
         self.incremental = True
         self.strategy = VerificationStrategy.AUTO
         self.solver_name = "msat"
-        self.full_trace = False
         self.prefix = None
         self.smt2file = None
         self.simplify = False
         self.map_function = None
         self.vcd_trace = False
         self.prove = False
+        self.full_trace = False
+        self.trace_diff_vars = True
 
         self.strategies = MCConfig.get_strategies()
 
@@ -435,8 +437,7 @@ class BMCSolver(object):
 
         full_trace = self.config.full_trace
 
-        if write_to_file:
-            diff_only = False
+        diff_only = self.config.trace_diff_vars
 
         if Logger.level(1):
             diff_only = False

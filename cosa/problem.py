@@ -109,8 +109,8 @@ class Problem(object):
     symbolic_init = None
     smt2_tracing = None
 
-    trace_all_vars = None
-    trace_diff_vars = None
+    full_trace = True
+    trace_diff_vars = False
     trace_prefix = None
 
     verbosity = None
@@ -122,7 +122,6 @@ class Problem(object):
     prove = False
     bmc_length = 10
     bmc_length_min = 0
-    full_trace = True
     equivalence = None
     
     model_file = None

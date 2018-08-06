@@ -247,5 +247,6 @@ class ProblemSolver(object):
         mc_config.properties = problem.formula
         mc_config.assumptions = problem.assumptions
         mc_config.lemmas = problem.lemmas
+        mc_config.trace_diff_vars = problem.trace_diff_vars
 
         return mc_config
