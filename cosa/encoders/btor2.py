@@ -173,11 +173,14 @@ class BTOR2Parser(object):
                 ts.add_input_var(nodemap[nid])
 
             if ntype == OUTPUT:
-                if len(nids) > 1:
-                    nodemap[nid] = Symbol(nids[1], getnode(nids[0]))
+                if len(nids) > 2:
+                    symbol = Symbol(nids[2], getnode(nids[0]))
                 else:
-                    nodemap[nid] = Symbol((SN%nid), getnode(nids[0]))
-                ts.add_output_var(nodemap[nid])
+                    symbol = Symbol((SN%nid), getnode(nids[0]))
+
+                nodemap[nid] = EqualsOrIff(symbol, B2BV(getnode(nids[1])))
+                invarlist.append(nodemap[nid])
+                ts.add_output_var(symbol)
                 
             if ntype == AND:
                 nodemap[nid] = binary_op(BVAnd, And, getnode(nids[1]), getnode(nids[2]))
