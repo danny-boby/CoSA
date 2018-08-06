@@ -31,6 +31,7 @@ ONE="one"
 ONES="ones"
 STATE="state"
 INPUT="input"
+OUTPUT="output"
 ADD="add"
 EQ="eq"
 NE="ne"
@@ -157,16 +158,27 @@ class BTOR2Parser(object):
                 width = getnode(nids[0]).width
                 nodemap[nid] = BV(bin_to_dec(nids[1]), width)
                 
-            if ntype in [STATE, INPUT]:
+            if ntype == STATE:
                 if len(nids) > 1:
                     nodemap[nid] = Symbol(nids[1], getnode(nids[0]))
                 else:
                     nodemap[nid] = Symbol((SN%nid), getnode(nids[0]))
-                if ntype == INPUT:
-                    ts.add_input_var(nodemap[nid])
-                else:
-                    ts.add_state_var(nodemap[nid])
+                ts.add_state_var(nodemap[nid])
 
+            if ntype == INPUT:
+                if len(nids) > 1:
+                    nodemap[nid] = Symbol(nids[1], getnode(nids[0]))
+                else:
+                    nodemap[nid] = Symbol((SN%nid), getnode(nids[0]))
+                ts.add_input_var(nodemap[nid])
+
+            if ntype == OUTPUT:
+                if len(nids) > 1:
+                    nodemap[nid] = Symbol(nids[1], getnode(nids[0]))
+                else:
+                    nodemap[nid] = Symbol((SN%nid), getnode(nids[0]))
+                ts.add_output_var(nodemap[nid])
+                
             if ntype == AND:
                 nodemap[nid] = binary_op(BVAnd, And, getnode(nids[1]), getnode(nids[2]))
 
