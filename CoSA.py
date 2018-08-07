@@ -170,16 +170,14 @@ def run_verification(config):
             sys.setrecursionlimit(50000)
             with open(config.pickle_file, "wb") as f:
                 pickle.dump(hts, f)
-                f.close()
-            sys.setrecursionlimit(1000)
+            quit()
     else:
         if config.pickle_file:
             raise RuntimeError("Don't need to re-pickle the input file %s"%(config.strfile))
 
         Logger.msg("Loading pickle file %s\n"%(config.strfile), 0)
-        f = open(config.strfile, "rb")
-        hts = pickle.load(f)
-        f.close()
+        with open(config.pickle_file, "rb") as f:
+            hts = pickle.load(f)
         Logger.log("DONE", 0)
 
     printsmv = True

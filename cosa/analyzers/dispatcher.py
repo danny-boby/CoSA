@@ -97,7 +97,7 @@ class ProblemSolver(object):
         if problem.verification == VerificationType.EQUIVALENCE:
             accepted_ver = True
             if problem.equivalence:
-                (problem.hts2, _, _) = self.parse_model(problem.relative_path, problem.equivalence, problem.abstract_clock, problem.symbolic_init, "System 2")
+                (problem.hts2, _, _) = self.parse_model(problem.relative_path, problem.equivalence, problem.abstract_clock, problem.symbolic_init, "System 2", no_clock=problem.no_clock)
 
             htseq, miter_out = Miter.combine_systems(problem.hts, problem.hts2, bmc_length, problem.symbolic_init, mc_config.properties, True)
 
@@ -151,25 +151,25 @@ class ProblemSolver(object):
                 strfile = relative_path+strfile
             parser = None
 
-            if filetype == CoreIRParser.get_extension():
+            if filetype in CoreIRParser.get_extensions():
                 parser = CoreIRParser(abstract_clock, symbolic_init, no_clock)
                 parser.boolean = boolean
                 parser.deterministic = deterministic
                 self.parser = parser
 
-            if filetype == ExplicitTSParser.get_extension():
+            if filetype in ExplicitTSParser.get_extensions():
                 parser = ExplicitTSParser()
 
                 if not self.parser:
                     self.parser = parser
                 
-            if filetype == SymbolicTSParser.get_extension():
+            if filetype in SymbolicTSParser.get_extensions():
                 parser = SymbolicTSParser()
 
                 if not self.parser:
                     self.parser = parser
 
-            if filetype == BTOR2Parser.get_extension():
+            if filetype in BTOR2Parser.get_extensions():
                 parser = BTOR2Parser()
 
                 if not self.parser:
@@ -206,10 +206,10 @@ class ProblemSolver(object):
         # generate systems for each problem configuration
         systems = {}
         for si in problems.symbolic_inits:
-            (systems[('hts', si)], _, _) = self.parse_model(problems.relative_path, problems.model_file, problems.abstract_clock, si, "System 1", boolean=problems.boolean)
+            (systems[('hts', si)], _, _) = self.parse_model(problems.relative_path, problems.model_file, problems.abstract_clock, si, "System 1", boolean=problems.boolean, no_clock=problems.no_clock)
 
         if problems.equivalence is not None:
-            (systems[('hts2', si)], _, _) = self.parse_model(problems.relative_path, problems.equivalence, problems.abstract_clock, si, "System 2", boolean=problems.boolean)
+            (systems[('hts2', si)], _, _) = self.parse_model(problems.relative_path, problems.equivalence, problems.abstract_clock, si, "System 2", boolean=problems.boolean, no_clock=problems.no_clock)
         else:
             systems[('hts2', si)] = None
 
@@ -217,6 +217,7 @@ class ProblemSolver(object):
             problem.hts = systems[('hts', problem.symbolic_init)]
             problem.hts2 = systems[('hts2', problem.symbolic_init)]
             problem.abstract_clock = problems.abstract_clock
+            problem.no_clock = problems.no_clock
             problem.relative_path = problems.relative_path
 
             if config.time or problems.time:

@@ -102,7 +102,7 @@ class STSModule(object):
 
 class SymbolicTSParser(object):
     parser = None
-    extension = "sts"
+    extensions = ["sts"]
     
     def __init__(self):
         self.parser = self.__init_parser()
@@ -168,6 +168,9 @@ class SymbolicTSParser(object):
 
                 for vardef in self._split_list(vardefs, T_SC):
                     varname = vardef[0]
+                    if varname[0] == "'":
+                         varname = varname[1:-1]
+
                     vartype = vardef[2]
                     varpar = vardef[4:-1] if vartype != T_BOOL else None
 
@@ -207,7 +210,7 @@ class SymbolicTSParser(object):
         
     def __init_parser(self):
 
-        varname = Word(alphas+nums+T_US+T_MIN+T_DOT)(P_VARNAME)
+        varname = (Combine(Literal("'")+Word(alphas+nums+T_US+T_MIN+T_DOT+"$"+"["+"]"+":")+Literal("'")) | Word(alphas+nums+T_US+T_MIN+T_DOT))(P_VARNAME)
 
         comment = Group(T_COM + restOfLine + LineEnd())(P_COMMENT)
         emptyline = Group(ZeroOrMore(White(' \t')) + LineEnd())(P_EMPTY)
@@ -225,7 +228,7 @@ class SymbolicTSParser(object):
         moddef = (Literal(T_DEF) + Word(alphas+T_US+nums) + Literal(T_OP) + parlistdef + Literal(T_CP) + Literal(T_CL))(P_MODDEF)
         
         operators = T_NEG+T_MIN+T_PLUS+T_EQ+T_NEQ+T_LT+T_LTE+T_IMPL+T_BOOLSYM+T_ITE
-        formula = (Word(alphas+nums+T_US+T_SP+T_DOT+T_OP+T_CP+T_OB+T_CB+operators) + Literal(T_SC))(P_FORMULA)
+        formula = (Word(alphas+nums+T_US+T_SP+T_DOT+T_OP+T_CP+T_OB+T_CB+"'"+operators) + Literal(T_SC))(P_FORMULA)
 
         vardefs = (Literal(T_VAR) + (OneOrMore(vardef)(P_VARDEFS)))(P_VARS)
         inits = (Literal(T_INIT) + (OneOrMore(formula))(P_FORMULAE))(P_INIT)
@@ -266,7 +269,7 @@ class SymbolicTSParser(object):
         
         for var in module.vars+module.pars:
             varlist.append((".".join(path+[str(var[0])]), var[1:]))
-            
+
         for sub in module.subs:
             varlist = self._collect_sub_variables(modulesdic[sub[1]], modulesdic, path + [sub[0]], varlist)
 
@@ -301,7 +304,7 @@ class SymbolicTSParser(object):
 
         for par in module.pars:
             hts.add_param(self._define_var((par[0], tuple(par[1:])), module.name))
-        
+
         for init_s in module.init:
             formula = sparser.parse_formula(quote_names(init_s, module.name), False)
             init.append(formula)
@@ -357,10 +360,10 @@ class SymbolicTSParser(object):
     def remap_or2an(self, name):
         return name
 
-    def get_extension(self):
-        return self.extension
+    def get_extensions(self):
+        return self.extensions
 
     @staticmethod        
-    def get_extension():
-        return SymbolicTSParser.extension
+    def get_extensions():
+        return SymbolicTSParser.extensions
     

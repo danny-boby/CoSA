@@ -63,7 +63,7 @@ BAD="bad"
 
 class BTOR2Parser(object):
     parser = None
-    extension = "btor2"
+    extensions = ["btor2","btor"]
     
     def __init__(self):
         pass
@@ -72,12 +72,12 @@ class BTOR2Parser(object):
         with open(strfile, "r") as f:
             return self.parse_string(f.read())
 
-    def get_extension(self):
-        return self.extension
+    def get_extensions(self):
+        return self.extensions
 
     @staticmethod        
-    def get_extension():
-        return BTOR2Parser.extension
+    def get_extensions():
+        return BTOR2Parser.extensions
 
     def remap_an2or(self, name):
         return name

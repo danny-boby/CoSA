@@ -34,7 +34,7 @@ class CoreIRModelFlags(ModelFlags):
     FC_LEMMAS = "FC-LEMMAS"
 
 class CoreIRParser(ModelParser):
-    extension = "json"
+    extensions = ["json"]
     
     abstract_clock = None
     no_clock = None
@@ -81,8 +81,8 @@ class CoreIRParser(ModelParser):
         self.deterministic = False
         
     @staticmethod        
-    def get_extension():
-        return CoreIRParser.extension
+    def get_extensions():
+        return CoreIRParser.extensions
         
     def run_passes(self):
         self.context.run_passes(['rungenerators',\
