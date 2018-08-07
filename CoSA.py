@@ -63,6 +63,7 @@ class Config(object):
     strategy = None
     boolean = None
     abstract_clock = False
+    no_clock = False
     skip_solving = False
     pickle_file = None
     solver_name = None
@@ -100,6 +101,7 @@ class Config(object):
         self.strategy = MCConfig.get_strategies()[0][0]
         self.boolean = False
         self.abstract_clock = False
+        self.no_clock = False        
         self.skip_solving = False
         self.pickle_file = None
         self.solver_name = "msat"
@@ -160,7 +162,7 @@ def run_verification(config):
 
     if config.strfiles[0][-4:] != ".pkl":
         ps = ProblemSolver()
-        (hts, invar_props, ltl_props) = ps.parse_model("./", config.strfiles, config.abstract_clock, config.symbolic_init, deterministic=config.deterministic, boolean=config.boolean)
+        (hts, invar_props, ltl_props) = ps.parse_model("./", config.strfiles, config.abstract_clock, config.symbolic_init, deterministic=config.deterministic, boolean=config.boolean, no_clock=config.no_clock)
         config.parser = ps.parser
 
         if config.pickle_file:
@@ -458,6 +460,10 @@ if __name__ == "__main__":
     # Encoding parameters
 
     enc_params = parser.add_argument_group('encoding')
+
+    enc_params.set_defaults(no_clock=False)
+    enc_params.add_argument('--no-clock', dest='no_clock', action='store_true',
+                       help='does not add the clock behavior.')
     
     enc_params.set_defaults(abstract_clock=False)
     enc_params.add_argument('--abstract-clock', dest='abstract_clock', action='store_true',
@@ -572,6 +578,7 @@ if __name__ == "__main__":
     config.solver_name = args.solver_name
     config.incremental = not args.ninc
     config.time = args.time
+    config.no_clock = args.no_clock
 
     if len(sys.argv)==1:
         parser.print_help()
