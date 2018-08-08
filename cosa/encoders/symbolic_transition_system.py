@@ -367,3 +367,99 @@ class SymbolicTSParser(object):
     def get_extensions():
         return SymbolicTSParser.extensions
     
+class SymbolicSimpleTSParser(object):
+    parser = None
+    extensions = ["ssts"]
+
+    @staticmethod        
+    def get_extensions():
+        return SymbolicSimpleTSParser.extensions
+    
+    def __init__(self):
+        pass
+
+    def parse_file(self, strfile, flags=None):
+        with open(strfile, "r") as f:
+            return self.parse_string(f.readlines())
+
+    def _define_var(self, varname, vartype):
+        vartype, size = vartype[0], vartype[1]
+        
+        if vartype == T_BV:
+            return Symbol(varname, BVType(int(size)))
+
+        if vartype == T_BOOL:
+            return Symbol(varname, BOOL)
+        
+        Logger.error("Unsupported type: %s"%vartype)
+        
+    def parse_string(self, lines):
+
+        (var, init, invar, trans) = (False, False, False, False)
+        
+        inits = TRUE()
+        invars = TRUE()
+        transs = TRUE()
+
+        sparser = StringParser()
+
+        count = 0
+        vars = set([])
+        invar_props = []
+        ltl_props = []
+        
+        for line in lines:
+            count += 1
+
+            if line.strip() in ["","\n"]:
+                continue
+            
+            if T_VAR == line[:len(T_VAR)]:
+                (var, init, invar, trans) = (False, False, False, False)
+                var = True
+                continue
+
+            if T_INIT == line[:len(T_INIT)]:
+                (var, init, invar, trans) = (False, False, False, False)
+                init = True
+                continue
+
+            if T_INVAR == line[:len(T_INVAR)]:
+                (var, init, invar, trans) = (False, False, False, False)
+                invar = True
+                continue
+
+            if T_TRANS == line[:len(T_TRANS)]:
+                (var, init, invar, trans) = (False, False, False, False)
+                trans = True
+                continue
+            
+            if var:
+                line = line[:-2].replace(" ","").split(":")
+                varname, vartype = line[0], (line[1][:-1].split("("))
+                if varname[0] == "'":
+                    varname = varname[1:-1]
+                vardef = self._define_var(varname, vartype)
+                vars.add(vardef)
+                
+            if init:
+                inits = And(inits, sparser.parse_formula(quote_names(line[:-2])))
+
+            if invar:
+                invars = And(invars, sparser.parse_formula(quote_names(line[:-2])))
+
+            if trans:
+                transs = And(transs, sparser.parse_formula(quote_names(line[:-2])))
+                
+
+        hts = HTS("STS")
+        ts = TS()
+
+        ts.vars = vars
+        ts.init = inits
+        ts.invar = invars
+        ts.trans = transs
+        
+        hts.add_ts(ts)
+
+        return (hts, invar_props, ltl_props)

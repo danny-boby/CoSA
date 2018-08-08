@@ -63,7 +63,7 @@ def get_free_variables(formula):
     symwalker.walk(formula)
     return symwalker.symbols
 
-KEYWORDS = ["not","False","True","next","prev","G","F","X","U","R","O","H"]
+KEYWORDS = ["not","False","True","next","prev","G","F","X","U","R","O","H","xor","ZEXT","bvcomp"]
 OPERATORS = [(" < "," u< "), \
              (" > "," u> "), \
              (" >= "," u>= "), \
@@ -75,18 +75,17 @@ def quote_names(strformula, prefix=None):
         lst_names.append(prefix)
     strformula = strformula.replace("\\","")
 
-    quoted = lambda x: x[0] == "'" and x[-1] == "'"
-    
-    lits = [x for x in list(re.findall("([a-zA-Z'][a-zA-Z_$\.'0-9\[\]]*)+", strformula)) if x not in KEYWORDS and not quoted(x)]
+    lits = [x for x in list(re.findall("([a-zA-Z][a-zA-Z_$\.0-9\[\]]*)+", strformula)) if x not in KEYWORDS]
     lits.sort()
 
     repl_lst = []
     
     for lit in lits:
         newlit = new_string()
+        strformula = strformula.replace("\'%s\'"%lit, lit)
         strformula = strformula.replace(lit, newlit)
         repl_lst.append((newlit, lit))
-    
+
     for (newlit, lit) in repl_lst:
         strformula = strformula.replace(newlit, "\'%s\'"%(".".join(lst_names+[lit])))
     for op in OPERATORS:

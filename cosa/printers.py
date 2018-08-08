@@ -175,21 +175,21 @@ class SMVHTSPrinter(HTSPrinter):
             else:
                 self.write("%s : word[%s];\n"%(sname, var.symbol_type().width))
 
-        # if locvars: self.write("\nDEFINE\n")
-        # for var in locvars:
-        #     self.write("%s := next(%s);\n"%(self.names(TS.get_prime(var).symbol_name()), self.names(var.symbol_name())))
-
-        sections = [(simplify(hts.init),"INIT"), (simplify(hts.invar),"INVAR"), (simplify(hts.trans),"TRANS")]
+        sections = [((hts.init),"INIT"), ((hts.invar),"INVAR"), ((hts.trans),"TRANS")]
 
         for (formula, keyword) in sections:
             if formula not in [TRUE(), FALSE()]:
                 self.write("\n%s\n"%keyword)
                 cp = list(conjunctive_partition(formula))
                 for i in range(len(cp)):
-                    f = cp[i]
+                    f = simplify(cp[i])
+                    if f == TRUE():
+                        continue
                     self.printer(f)
                     if i < len(cp)-1:
-                        self.write(" &\n")
+                        self.write(";\n")
+                    if f == FALSE():
+                        break
                 self.write(";\n")
 
         if has_comment:
@@ -199,9 +199,9 @@ class SMVHTSPrinter(HTSPrinter):
 
 class STSHTSPrinter(HTSPrinter):
     name = "STS"
-    description = "\tSTS format"
+    description = "\tSimple STS format"
     TYPE = PrinterType.STS
-    EXT  = ".sts"
+    EXT  = ".ssts"
 
     def __init__(self):
         HTSPrinter.__init__(self)
@@ -211,15 +211,6 @@ class STSHTSPrinter(HTSPrinter):
         self.printer = printer.printer
 
     def print_hts(self, hts, properties=None):
-        # if properties is not None:
-        #     for strprop, prop, _ in properties:
-        #         if has_ltl_operators(prop):
-        #             self.write("\nLTLSPEC ")
-        #         else:
-        #             self.write("\nINVARSPEC ")
-        #         self.printer(prop)
-        #         self.write(";\n")
-
         if hts.assumptions is not None:
             self.write("\n# ASSUMPTIONS\n")
             for assmp in hts.assumptions:
@@ -256,17 +247,22 @@ class STSHTSPrinter(HTSPrinter):
             else:
                 self.write("%s : BV(%s);\n"%(sname, var.symbol_type().width))
 
-        sections = [(simplify(ts.init),"INIT"), (simplify(ts.invar),"INVAR"), (simplify(ts.trans),"TRANS")]
+        sections = [((ts.init),"INIT"), ((ts.invar),"INVAR"), ((ts.trans),"TRANS")]
 
         for (formula, keyword) in sections:
             if formula not in [TRUE(), FALSE()]:
                 self.write("\n%s\n"%keyword)
                 cp = list(conjunctive_partition(formula))
                 for i in range(len(cp)):
-                    f = cp[i]
+                    f = simplify(cp[i])
+                    if f == TRUE():
+                        continue
                     self.printer(f)
                     if i < len(cp)-1:
                         self.write(";\n")
+                    if f == FALSE():
+                        break
+                        
                 self.write(";\n")
 
         if has_comment:

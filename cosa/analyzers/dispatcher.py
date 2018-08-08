@@ -21,7 +21,7 @@ from cosa.problem import VerificationStatus
 from cosa.encoders.miter import Miter
 from cosa.representation import HTS
 from cosa.encoders.explicit_transition_system import ExplicitTSParser
-from cosa.encoders.symbolic_transition_system import SymbolicTSParser
+from cosa.encoders.symbolic_transition_system import SymbolicTSParser, SymbolicSimpleTSParser
 from cosa.encoders.btor2 import BTOR2Parser
 from cosa.encoders.ltl import ltl_reset_env, LTLParser
 
@@ -162,13 +162,19 @@ class ProblemSolver(object):
 
                 if not self.parser:
                     self.parser = parser
-                
+                                        
             if filetype in SymbolicTSParser.get_extensions():
                 parser = SymbolicTSParser()
 
                 if not self.parser:
                     self.parser = parser
 
+            if filetype in SymbolicSimpleTSParser.get_extensions():
+                parser = SymbolicSimpleTSParser()
+
+                if not self.parser:
+                    self.parser = parser
+                    
             if filetype in BTOR2Parser.get_extensions():
                 parser = BTOR2Parser()
 
