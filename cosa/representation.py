@@ -319,6 +319,9 @@ class TS(object):
         self.init = init
         self.trans = trans
         self.invar = invar
+
+    def add_var(self, var):
+        self.vars.add(var)
         
     def add_state_var(self, var):
         self.state_vars.add(var)

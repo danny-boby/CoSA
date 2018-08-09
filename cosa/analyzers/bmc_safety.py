@@ -128,7 +128,7 @@ class BMCSafety(BMCSolver):
             res = self.solve_safety_inc_fwd(hts, prop, k, k_min)
             if res[1] is not None:
                 return res
-            if self.config.prove:
+            if self.config.prove and not TS.has_next(prop):
                 res = self.solve_safety_int(hts, prop, k)
                 if res[1] is not None:
                     return res
@@ -139,7 +139,7 @@ class BMCSafety(BMCSolver):
             res = self.solve_safety_inc_zz(hts, prop, k)
             self.config.strategy == VerificationStrategy.ZZ
             return res
-
+        
         if self.config.strategy in [VerificationStrategy.FWD, VerificationStrategy.AUTO]:
             return self.solve_safety_inc_fwd(hts, prop, k, k_min)
 

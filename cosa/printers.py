@@ -183,13 +183,9 @@ class SMVHTSPrinter(HTSPrinter):
                 cp = list(conjunctive_partition(formula))
                 for i in range(len(cp)):
                     f = simplify(cp[i])
-                    if f == TRUE():
-                        continue
                     self.printer(f)
                     if i < len(cp)-1:
-                        self.write(";\n")
-                    if f == FALSE():
-                        break
+                        self.write(" &\n")
                 self.write(";\n")
 
         if has_comment:
@@ -239,13 +235,19 @@ class STSHTSPrinter(HTSPrinter):
             self.write("# %s\n"%ts.comment)
             self.write("%s\n"%("-"*lenstr))
 
-        self.write("VAR\n")
-        for var in ts.vars:
-            sname = self.names(var.symbol_name())
-            if var.symbol_type() == BOOL:
-                self.write("%s : Bool;\n"%(sname))
-            else:
-                self.write("%s : BV(%s);\n"%(sname, var.symbol_type().width))
+        sections = [("VAR", [x for x in ts.vars if x not in list(ts.state_vars)+list(ts.input_vars)+list(ts.output_vars)]),\
+                    ("STATE", ts.state_vars),\
+                    ("INPUT", ts.input_vars),\
+                    ("OUTPUT", ts.output_vars)]
+
+        for (sname, vars) in sections:
+            if len(vars) > 0: self.write("%s\n"%sname)
+            for var in vars:
+                sname = self.names(var.symbol_name())
+                if var.symbol_type() == BOOL:
+                    self.write("%s : Bool;\n"%(sname))
+                else:
+                    self.write("%s : BV(%s);\n"%(sname, var.symbol_type().width))
 
         sections = [((ts.init),"INIT"), ((ts.invar),"INVAR"), ((ts.trans),"TRANS")]
 
@@ -258,13 +260,10 @@ class STSHTSPrinter(HTSPrinter):
                     if f == TRUE():
                         continue
                     self.printer(f)
-                    if i < len(cp)-1:
-                        self.write(";\n")
+                    self.write(";\n")
                     if f == FALSE():
                         break
-                        
-                self.write(";\n")
-
+                    
         if has_comment:
             self.write("\n%s\n"%("-"*lenstr))
     
@@ -322,6 +321,8 @@ class STSPrinter(HRLTLPrinter):
             self.write("'%s'"%formula.symbol_name())
 
     def walk_bv_ult(self, formula): return self.walk_nary(formula, " < ")
+    def walk_bv_ule(self, formula): return self.walk_nary(formula, " <= ")
+    def walk_bv_ugt(self, formula): return self.walk_nary(formula, " > ")
             
 
 class TracePrinter(object):

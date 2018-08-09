@@ -69,7 +69,7 @@ OPERATORS = [(" < "," u< "), \
              (" >= "," u>= "), \
              (" <= "," u<= ")]
 
-def quote_names(strformula, prefix=None):
+def quote_names(strformula, prefix=None, replace_ops=True):
     lst_names = []
     if (prefix is not None) and (prefix != ""):
         lst_names.append(prefix)
@@ -88,7 +88,8 @@ def quote_names(strformula, prefix=None):
 
     for (newlit, lit) in repl_lst:
         strformula = strformula.replace(newlit, "\'%s\'"%(".".join(lst_names+[lit])))
-    for op in OPERATORS:
-        strformula = strformula.replace(op[0], op[1])
+    if replace_ops:
+        for op in OPERATORS:
+            strformula = strformula.replace(op[0], op[1])
 
     return strformula
