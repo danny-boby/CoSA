@@ -170,7 +170,6 @@ def run_verification(config):
             sys.setrecursionlimit(50000)
             with open(config.pickle_file, "wb") as f:
                 pickle.dump(hts, f)
-            quit()
     else:
         if config.pickle_file:
             raise RuntimeError("Don't need to re-pickle the input file %s"%(config.strfile))
