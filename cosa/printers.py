@@ -9,13 +9,14 @@
 # limitations under the License.
 
 import datetime
+import random
 
 from six.moves import cStringIO
 
 from pysmt.printers import HRPrinter
 from pysmt.walkers import TreeWalker
 from pysmt.utils import quote
-from pysmt.shortcuts import Symbol, simplify, TRUE, FALSE, BOOL
+from pysmt.shortcuts import Symbol, simplify, TRUE, FALSE, BOOL, And
 from pysmt.rewritings import conjunctive_partition
 
 from cosa.representation import TS
@@ -199,9 +200,12 @@ class STSHTSPrinter(HTSPrinter):
     TYPE = PrinterType.STS
     EXT  = ".ssts"
 
+    simplify = False
+
     def __init__(self):
         HTSPrinter.__init__(self)
         self.write = self.stream.write
+        self.simplify = False
 
         printer = STSPrinter(self.stream)
         self.printer = printer.printer
@@ -224,6 +228,22 @@ class STSHTSPrinter(HTSPrinter):
     def names(self, name):
         return "'%s'"%name
 
+    def _simplify_cp(self, cp):
+        random.shuffle(cp)
+        newcp = []
+        last = False
+        step = 3
+        for i in range(0, len(cp)-(step-1), step):
+            if i == len(cp)-step:
+                last = True
+            formula = simplify(And([cp[i+j] for j in range(step)]))
+            newcp += list(conjunctive_partition(formula))
+
+        if not last:
+            for i in range(-1, -step, -1):
+                newcp.append(cp[i])
+        return newcp
+    
     def __print_single_ts(self, ts):
 
         has_comment = len(ts.comment) > 0
@@ -248,13 +268,17 @@ class STSHTSPrinter(HTSPrinter):
                     self.write("%s : Bool;\n"%(sname))
                 else:
                     self.write("%s : BV(%s);\n"%(sname, var.symbol_type().width))
+            self.write("\n")
 
         sections = [((ts.init),"INIT"), ((ts.invar),"INVAR"), ((ts.trans),"TRANS")]
 
         for (formula, keyword) in sections:
             if formula not in [TRUE(), FALSE()]:
-                self.write("\n%s\n"%keyword)
+                self.write("%s\n"%keyword)
                 cp = list(conjunctive_partition(formula))
+                if self.simplify:
+                    cp = self._simplify_cp(cp)
+    
                 for i in range(len(cp)):
                     f = simplify(cp[i])
                     if f == TRUE():
@@ -263,6 +287,7 @@ class STSHTSPrinter(HTSPrinter):
                     self.write(";\n")
                     if f == FALSE():
                         break
+                self.write("\n")
                     
         if has_comment:
             self.write("\n%s\n"%("-"*lenstr))
