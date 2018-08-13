@@ -25,6 +25,7 @@ from cosa.analyzers.bmc_safety import BMCSafety
 from cosa.analyzers.bmc_ltl import BMCLTL
 from cosa.utils.logger import Logger
 from cosa.printers import PrintersFactory, PrinterType, SMVHTSPrinter
+from cosa.encoders.monitors import MonitorsFactory
 from cosa.encoders.explicit_transition_system import ExplicitTSParser
 from cosa.encoders.symbolic_transition_system import SymbolicTSParser
 from cosa.encoders.coreir import CoreIRParser
@@ -72,6 +73,7 @@ class Config(object):
     incremental = True
     deterministic = False
     time = False
+    monitors = None
 
     def __init__(self):
         PrintersFactory.init_printers()
@@ -436,6 +438,11 @@ if __name__ == "__main__":
     ver_params.add_argument('-a', '--assumptions', metavar='<invar assumptions list>', type=str, required=False,
                        help='comma separated list of invariant assumptions.')
 
+    # monitors = [" - \"%s\": %s, with parameters (%s)"%(x.get_name(), x.get_desc(), x.get_interface()) for x in MonitorsFactory.get_monitors()]
+
+    # ver_params.add_argument('--monitors', metavar='monitors', type=str, nargs='?',
+    #                     help='comma separated list of monitors instantiation. Possible types:\n%s'%("\n".join(monitors)))
+    
     ver_params.set_defaults(prove=False)
     ver_params.add_argument('--prove', dest='prove', action='store_true',
                        help='use indution to prove the satisfiability of the property.')
@@ -576,6 +583,7 @@ if __name__ == "__main__":
     config.incremental = not args.ninc
     config.time = args.time
     config.no_clock = args.no_clock
+    # config.monitors = args.monitors
 
     if len(sys.argv)==1:
         parser.print_help()

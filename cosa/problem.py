@@ -127,6 +127,7 @@ class Problem(object):
     equivalence = None
     
     model_file = None
+    monitors = None
     relative_path = None
     name = None
     trace = None
@@ -136,7 +137,7 @@ class Problem(object):
     skip_solving = False
 
     solver_name = None
-    
+
     def __init__(self):
         self.status = VerificationStatus.UNC
         self.description = ""

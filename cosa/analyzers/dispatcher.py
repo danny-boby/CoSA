@@ -24,6 +24,7 @@ from cosa.encoders.explicit_transition_system import ExplicitTSParser
 from cosa.encoders.symbolic_transition_system import SymbolicTSParser, SymbolicSimpleTSParser
 from cosa.encoders.btor2 import BTOR2Parser
 from cosa.encoders.ltl import ltl_reset_env, LTLParser
+from cosa.encoders.monitors import MonitorsFactory
 
 FLAG_SR = "["
 FLAG_ST = "]"
@@ -69,7 +70,25 @@ class ProblemSolver(object):
         lemmas = None
 
         accepted_ver = False
-        
+
+        if problem.monitors is not None:
+
+            varsdict = dict([(var.symbol_name(), var) for var in problem.hts.vars])
+            
+            for strmonitor in problem.monitors.split(")"):
+                strmonitor = strmonitor.replace(" ","")
+                if strmonitor == "":
+                    continue
+                instance, mtype = strmonitor.split("=")
+                mtype, pars = mtype.split("(")
+                pars = pars.split(",")
+
+                monitor = MonitorsFactory.monitor_by_name(mtype)
+                pars = [varsdict[v] if v in varsdict else v for v in pars]
+                ts = monitor.get_sts(instance, pars)
+
+                problem.hts.add_ts(ts)
+                
         if problem.verification != VerificationType.EQUIVALENCE:
             assumps = [t[1] for t in sparser.parse_formulae(mc_config.assumptions)]
             lemmas = [t[1] for t in sparser.parse_formulae(mc_config.lemmas)]
