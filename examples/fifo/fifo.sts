@@ -6,12 +6,7 @@ OUTPUT
 
 VAR
  clk: BV(1);
- max: BV(8);
-
  fifo_1: FIFO(input, output, clk);
-
-INVAR
-max = 6_8;
 
 INIT
 clk = 0_1;

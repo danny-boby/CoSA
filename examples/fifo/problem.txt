@@ -5,7 +5,7 @@ model_file: fifo.sts
 bmc_length: 40
 
 [Scoreboard_end]
-description: "Scoreboard reaches the end value"
+description: "Scoreboard does not reach the end value"
 formula: !sb.end
 monitors: sb=Scoreboard(input, 6, clk)
 verification: safety
