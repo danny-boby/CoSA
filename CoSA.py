@@ -598,6 +598,7 @@ if __name__ == "__main__":
                 sys.exit(run_problems(args.problems, config))
             except Exception as e:
                 Logger.msg(str(e), 0)
+                sys.exit(1)
 
     Logger.error_raise_exept = False
             
@@ -640,5 +641,6 @@ if __name__ == "__main__":
             sys.exit(run_verification(config))
         except Exception as e:
             Logger.msg(str(e), 0)
-    
+            sys.exit(1)
+   
 

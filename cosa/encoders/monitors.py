@@ -14,6 +14,7 @@ from pysmt.shortcuts import And, Or, TRUE, FALSE, Not, EqualsOrIff, Implies, Iff
 from pysmt.typing import BOOL, BVType, ArrayType
 
 from cosa.representation import TS
+from cosa.utils.logger import Logger
 
 class NotRegisteredMonitorException(Exception):
     pass
@@ -36,7 +37,7 @@ class MonitorsFactory(object):
         MonitorsFactory.init_monitors()
         dmonitor = dict(MonitorsFactory.monitors)
         if name not in dmonitor:
-            raise NotRegisteredMonitorException
+            Logger.error("Not registered monitor")
         return dmonitor[name]
 
     @staticmethod
