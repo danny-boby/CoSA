@@ -332,11 +332,13 @@ class CoreIRParser(ModelParser):
                                 xval = xval.unsigned_value
                             except:
                                 xval = xval.val
+                                print(xval.__dict__)
                                 self.bitvec_new_version = False
                         else:
                             try:
                                 xval = xval.val
                             except:
+                                print(xval.__dict__)
                                 xval = xval.unsigned_value
                                 self.bitvec_new_version = True
 
