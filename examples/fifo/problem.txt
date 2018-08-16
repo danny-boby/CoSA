@@ -10,6 +10,7 @@ formula: !sb.end
 monitors: sb=Scoreboard(input, 6, clk)
 verification: safety
 prove: True
+expected: False
 
 [FifoCorrectness]
 description: "FIFO correctness with scoreboard"
@@ -19,3 +20,4 @@ verification: safety
 strategy: INT
 incremental: False
 prove: True
+expected: True

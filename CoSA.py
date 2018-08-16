@@ -74,6 +74,7 @@ class Config(object):
     deterministic = False
     time = False
     monitors = None
+    force_expected = False
 
     def __init__(self):
         PrintersFactory.init_printers()
@@ -255,7 +256,6 @@ def run_verification(config):
 
     if config.safety:
         count = 0
-        list_status = []
         props = sparser.parse_formulae(config.properties)
         props += [(str(p), p, None) for p in invar_props]
         if len(props) == 0:
@@ -269,9 +269,7 @@ def run_verification(config):
                 count += 1
                 print_trace("Counterexample", trace, count, config.prefix)
 
-            list_status.append(res)
-
-        return list_status
+        return 0
     
     if config.equivalence or config.fsm_check:
 
@@ -322,7 +320,6 @@ def run_verification(config):
 
     if config.ltl:
         count = 0
-        list_status = []
         props = ltlparser.parse_formulae(config.properties)
         props += [(str(p), p, None) for p in ltl_props]
         if len(props) == 0:
@@ -336,9 +333,7 @@ def run_verification(config):
                 count += 1
                 print_trace("Counterexample", trace, count, config.prefix)
 
-            list_status.append(res)
-
-        return list_status
+        return 0
             
 def run_problems(problems, config):
     reset_env()
@@ -348,19 +343,25 @@ def run_problems(problems, config):
     pbms.load_problems(problems)
     psol.solve_problems(pbms, config)
 
+    global_status = 0
+    
     Logger.log("\n*** SUMMARY ***", 0)
 
-    list_status = []
-    
     for pbm in pbms.problems:
         unk_k = "" if pbm.status != VerificationStatus.UNK else "\nBMC depth: %s"%pbm.bmc_length
         Logger.log("\n** Problem %s **"%(pbm.name), 0)
         Logger.log("Description: %s"%(pbm.description), 0)
         Logger.log("Result: %s%s"%(pbm.status, unk_k), 0)
+        if (pbm.expected is not None):
+            expected = VerificationStatus.convert(pbm.expected) == pbm.status
+            Logger.log("Expected: %s"%("OK" if expected else "WRONG"), 0)
+            if not expected:
+                global_status = 1
+
+        assert not(config.force_expected and (pbm.expected is None))
 
         prefix = config.prefix if config.prefix is not None else pbm.trace_prefix
         
-        list_status.append(pbm.status)
         if (pbm.verification != VerificationType.SIMULATION) and (pbm.status == VerificationStatus.FALSE):
             print_trace("Counterexample", pbm.trace, pbm.name, prefix)
 
@@ -370,7 +371,7 @@ def run_problems(problems, config):
         if pbm.time:
             Logger.log("Time: %.2f sec"%(pbm.time), 0)
             
-    return list_status
+    return global_status
             
 if __name__ == "__main__":
 
@@ -591,13 +592,12 @@ if __name__ == "__main__":
 
     if args.problems:
         if args.debug:
-            run_problems(args.problems, config)
+            sys.exit(run_problems(args.problems, config))
         else:
             try:
-                run_problems(args.problems, config)
+                sys.exit(run_problems(args.problems, config))
             except Exception as e:
                 Logger.msg(str(e), 0)
-        sys.exit(0)
 
     Logger.error_raise_exept = False
             
@@ -634,10 +634,10 @@ if __name__ == "__main__":
     Logger.error_raise_exept = True
     
     if args.debug:
-        run_verification(config)
+        sys.exit(run_verification(config))
     else:
         try:
-            run_verification(config)
+            sys.exit(run_verification(config))
         except Exception as e:
             Logger.msg(str(e), 0)
     

@@ -33,6 +33,20 @@ class VerificationStatus(object):
     TRUE = "TRUE"
     FALSE = "FALSE"
 
+    @staticmethod        
+    def convert(status):
+        if type(status) == bool:
+            return VerificationStatus.TRUE if status else VerificationStatus.FALSE
+        
+        if status.upper() in [VerificationStatus.TRUE,\
+                              VerificationStatus.FALSE,\
+                              VerificationStatus.UNK,\
+                              VerificationStatus.UNC]:
+            return status.upper()
+        
+        Logger.error("Invalid Verification Status \"%s\""%status)
+
+        
 class VerificationType(object):
     SAFETY = 0
     LIVENESS = 1
@@ -122,6 +136,7 @@ class Problem(object):
     verification = None
     formula = None
     prove = False
+    expected = None
     bmc_length = 10
     bmc_length_min = 0
     equivalence = None

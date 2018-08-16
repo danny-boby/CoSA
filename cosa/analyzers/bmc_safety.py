@@ -684,7 +684,6 @@ class BMCSafety(BMCSolver):
                 model = init_model
             else:
                 Logger.log("System deadlocked at k=%s"%(t), 2)
-                Logger.log("", 0, not(Logger.level(1)))
                 return (-1, full_model)
 
             # Use previous model as initial state for next sat call
@@ -712,7 +711,6 @@ class BMCSafety(BMCSolver):
                 if res_cont:
                     Logger.log('Reached cover in no unroll simulation at k=%s'%(t), 2)
                     model = init_model
-                    Logger.log("", 0, not(Logger.level(1)))
                     return (t, full_model)
                 else:
                     Logger.log('Cover not reached at k=%s'%t, 2)
@@ -720,7 +718,6 @@ class BMCSafety(BMCSolver):
             if inc:
                 self._pop(self.solver)
                 
-        Logger.log("", 0, not(Logger.level(1)))
         return (t, full_model)
 
 
