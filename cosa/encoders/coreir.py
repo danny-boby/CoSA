@@ -327,21 +327,13 @@ class CoreIRParser(ModelParser):
                     xval = 1 if xval else 0
                 else:
                     if type(xval) != int:
-                        if self.bitvec_new_version:
-                            try:
-                                xval = xval.unsigned_value
-                            except:
-                                print(xval.__dict__)
-                                xval = xval.val
-                                self.bitvec_new_version = False
-                        else:
+                        try:
+                            xval = xval.unsigned_value
+                        except:
                             try:
                                 xval = xval.val
                             except:
-                                print(xval.__dict__)
-                                xval = xval.unsigned_value
-                                self.bitvec_new_version = True
-
+                                xval = xval.as_uint
                 return xval
 
             if inst_mod.generated:
