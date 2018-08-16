@@ -333,7 +333,7 @@ class CoreIRParser(ModelParser):
                             try:
                                 xval = xval.val
                             except:
-                                xval = xval.as_uint
+                                xval = xval.as_uint()
                 return xval
 
             if inst_mod.generated:
