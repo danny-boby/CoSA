@@ -252,7 +252,7 @@ class BMCSolver(object):
                 elif v.symbol_type().is_bv_type():
                     self._write_smt2_log(solver, "(declare-fun %s () (_ BitVec %s))" % (v.symbol_name(), v.symbol_type().width))
                 else:
-                    raise RuntimeError("Unhandled type in smt2 translation")
+                    Logger.error("Unhandled type in smt2 translation")
 
             self._write_smt2_log(solver, "")
 

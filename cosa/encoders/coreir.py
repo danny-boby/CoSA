@@ -115,7 +115,7 @@ class CoreIRParser(ModelParser):
     
     def BVVar(self, name, width):
         if width <= 0 or not isinstance(width, int):
-            raise UndefinedTypeException("Bit Vector undefined for width = {}".format(width))
+            Logger.error("Bit Vector undefined for width = {}".format(width))
 
         orname = name.replace(CSEP, SEP)
 

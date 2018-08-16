@@ -73,7 +73,7 @@ class PrintersFactory(object):
         PrintersFactory.init_printers()
         dprint = dict(PrintersFactory.printers)
         if name not in dprint:
-            raise NotRegisteredPrinterException
+            Logger.error("Printer \"%s\" is not registered"%name)
         return dprint[name]
 
     @staticmethod
@@ -512,7 +512,7 @@ class VCDTracePrinter(TracePrinter):
                     var2id[indexed_name] = idvar
                     idvar += 1
             else:
-                raise RuntimeError("Unhandled type in VCD printer")
+                Logger.error("Unhandled type in VCD printer")
 
         for el in varlist + arr_varlist:
             (varname, width) = el

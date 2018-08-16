@@ -37,7 +37,7 @@ class MonitorsFactory(object):
         MonitorsFactory.init_monitors()
         dmonitor = dict(MonitorsFactory.monitors)
         if name not in dmonitor:
-            Logger.error("Not registered monitor")
+            Logger.error("Monitor \"%s\" is not registered"%name)
         return dmonitor[name]
 
     @staticmethod
