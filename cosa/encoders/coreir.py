@@ -28,8 +28,6 @@ CR = "_const_replacement"
 RCR = "_reg_const_replacement"
 SELF = "self"
 
-NEW_VERSION = True
-
 class CoreIRModelFlags(ModelFlags):
     FC_LEMMAS = "FC-LEMMAS"
 
@@ -48,6 +46,7 @@ class CoreIRParser(ModelParser):
     anonimize_names = False
     map_an2or = None
     map_or2an = None
+    bitvec_new_version = True
     idvars = 0
 
     deterministic = False
@@ -328,10 +327,18 @@ class CoreIRParser(ModelParser):
                     xval = 1 if xval else 0
                 else:
                     if type(xval) != int:
-                        if NEW_VERSION:
-                            xval = xval.unsigned_value
+                        if self.bitvec_new_version:
+                            try:
+                                xval = xval.unsigned_value
+                            except:
+                                xval = xval.val
+                                self.bitvec_new_version = False
                         else:
-                            xval = xval.val
+                            try:
+                                xval = xval.val
+                            except:
+                                xval = xval.unsigned_value
+                                self.bitvec_new_version = True
 
                 return xval
 
