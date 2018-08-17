@@ -32,7 +32,7 @@ from cosa.encoders.coreir import CoreIRParser
 from cosa.encoders.formulae import StringParser
 from cosa.encoders.miter import Miter
 from cosa.encoders.ltl import ltl_reset_env, LTLParser
-from cosa.problem import Problems, VerificationStatus, VerificationType
+from cosa.problem import Problems, VerificationStatus, VerificationType, Property
 from cosa.representation import HTS
 
 from pysmt.shortcuts import TRUE, reset_env, get_env
@@ -245,12 +245,13 @@ def run_verification(config):
             props = [("True", TRUE(), None)]
         else:
             props = sparser.parse_formulae(config.properties)
-        for (strprop, prop, _) in props:
+        for (strprop, formula, _) in props:
+            prop = Property(formula)
             Logger.log("Simulation for property \"%s\":"%(strprop), 0)
-            res, trace = bmc_safety.simulate(prop, config.bmc_length)
-            if res == VerificationStatus.TRUE:
+            prop = bmc_safety.simulate(prop, config.bmc_length)
+            if prop.result == VerificationStatus.TRUE:
                 count += 1
-                print_trace("Execution", trace, count, config.prefix)
+                print_trace("Execution", prop.trace, count, config.prefix)
             else:
                 Logger.log("No execution found", 0)
 
@@ -261,13 +262,14 @@ def run_verification(config):
         if len(props) == 0:
             Logger.warning("Safety verification requires at least a property")
             
-        for (strprop, prop, _) in props:
+        for (strprop, formula, _) in props:
+            prop = Property(formula)
             Logger.log("Safety verification for property \"%s\":"%(strprop), 0)
-            res, trace, t = bmc_safety.safety(prop, config.bmc_length, config.bmc_length_min)
-            Logger.log("\nProperty is %s"%res, 0)
-            if res == VerificationStatus.FALSE:
+            prop = bmc_safety.safety(prop, config.bmc_length, config.bmc_length_min)
+            Logger.log("\nProperty is %s"%prop.result, 0)
+            if prop.result == VerificationStatus.FALSE:
                 count += 1
-                print_trace("Counterexample", trace, count, config.prefix)
+                print_trace("Counterexample", prop.trace, count, config.prefix)
 
         return 0
     
@@ -302,14 +304,15 @@ def run_verification(config):
 
         # create bmc object for combined system
         bmcseq = BMC(htseq, mc_config)
-        res, trace, t = bmcseq.safety(miter_out, config.bmc_length, config.bmc_length_min)
+        prop = Property(miter_out)
+        prop = bmcseq.safety(prop, config.bmc_length, config.bmc_length_min)
 
         msg = "Systems are %s equivalent" if config.equivalence else "System is%s deterministic"
         
-        if res == VerificationStatus.FALSE:
+        if prop.result == VerificationStatus.FALSE:
             Logger.log(msg%(" not"), 0)
-            print_trace("Counterexample", trace, 1, config.prefix)
-        elif res == VerificationStatus.UNK:
+            print_trace("Counterexample", prop.trace, 1, config.prefix)
+        elif prop.result == VerificationStatus.UNK:
             if config.symbolic_init:
                 # strong equivalence with symbolic initial state
                 Logger.log(msg%(""), 0)
@@ -325,13 +328,14 @@ def run_verification(config):
         if len(props) == 0:
             Logger.warning("LTL verification requires at least a property")
             
-        for (strprop, prop, _) in props:
+        for (strprop, formula, _) in props:
+            prop = Property(formula)
             Logger.log("LTL verification for property \"%s\":"%(strprop), 0)
-            res, trace, t = bmc_ltl.ltl(prop, config.bmc_length, config.bmc_length_min)
-            Logger.log("\nProperty is %s"%res, 0)
-            if res == VerificationStatus.FALSE:
+            prop = bmc_ltl.ltl(prop, config.bmc_length, config.bmc_length_min)
+            Logger.log("\nProperty is %s"%prop.result, 0)
+            if prop.result == VerificationStatus.FALSE:
                 count += 1
-                print_trace("Counterexample", trace, count, config.prefix)
+                print_trace("Counterexample", prop.trace, count, config.prefix)
 
         return 0
             
@@ -354,7 +358,7 @@ def run_problems(problems, config):
         Logger.log("Result: %s%s"%(pbm.status, unk_k), 0)
         if (pbm.expected is not None):
             expected = VerificationStatus.convert(pbm.expected) == pbm.status
-            Logger.log("Expected: %s"%("OK" if expected else "WRONG"), 0)
+            Logger.log("Expected: %s"%("OK" if expected else "%s - WRONG"%VerificationStatus.convert(pbm.expected)), 0)
             if not expected:
                 global_status = 1
 
