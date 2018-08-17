@@ -336,7 +336,6 @@ def run_verification(config):
             if prop.result == VerificationStatus.FALSE:
                 count += 1
                 print_trace("Counterexample", prop.trace, count, config.prefix)
-
         return 0
             
 def run_problems(problems, config):
@@ -358,7 +357,7 @@ def run_problems(problems, config):
         Logger.log("Result: %s%s"%(pbm.status, unk_k), 0)
         if (pbm.expected is not None):
             expected = VerificationStatus.convert(pbm.expected) == pbm.status
-            Logger.log("Expected: %s"%("OK" if expected else "%s - WRONG"%VerificationStatus.convert(pbm.expected)), 0)
+            Logger.log("Expected: %s"%("OK" if expected else "WRONG"), 0)
             if not expected:
                 global_status = 1
 
