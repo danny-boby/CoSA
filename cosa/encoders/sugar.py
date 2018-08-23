@@ -22,6 +22,8 @@ class SyntacticSugarFactory(object):
     def init_ssugar():
         SyntacticSugarFactory.register_sugar(Posedge())
         SyntacticSugarFactory.register_sugar(Negedge())
+        SyntacticSugarFactory.register_sugar(Change())
+        SyntacticSugarFactory.register_sugar(NoChange())
 
         for name in SyntacticSugarFactory.sugar_names():
             if name not in KEYWORDS:
@@ -54,14 +56,17 @@ class SyntacticSugar(object):
         return self.description
 
     def insert_lexer_rule(self, rules):
-        pass
-    
+        rules.insert(0, Rule(r"(%s)"%self.name, self.adapter(), False))
+
+    def adapter(self):
+        Logger.error("Adapter not implemented")
+        
 class Posedge(SyntacticSugar):
     name = "posedge"
-    description = "Clock Posedge definition"
+    description = "Clock Posedge"
 
-    def insert_lexer_rule(self, rules):
-        rules.insert(0, Rule(r"(posedge)", UnaryOpAdapter(self.Posedge, 100), False))
+    def adapter(self):
+        return UnaryOpAdapter(self.Posedge, 100)
 
     def Posedge(self, x):
         if get_type(x).is_bool_type():
@@ -70,13 +75,32 @@ class Posedge(SyntacticSugar):
 
 class Negedge(SyntacticSugar):
     name = "negedge"
-    description = "Clock Negedge definition"
+    description = "Clock Negedge"
 
-    def insert_lexer_rule(self, rules):
-        rules.insert(0, Rule(r"(negedge)", UnaryOpAdapter(self.Negedge, 100), False))
-
+    def adapter(self):
+        return UnaryOpAdapter(self.Negedge, 100)
+        
     def Negedge(self, x):
         if get_type(x).is_bool_type():
             return And(x, Not(TS.to_next(x)))
         return And(BV2B(x), EqualsOrIff(TS.to_next(x), BV(0,1)))
     
+class Change(SyntacticSugar):
+    name = "change"
+    description = "Signal Change"
+
+    def adapter(self):
+        return UnaryOpAdapter(self.Change, 100)
+    
+    def Change(self, x):
+        return Not(EqualsOrIff(x), TS.to_next(x))
+
+class NoChange(SyntacticSugar):
+    name = "nochange"
+    description = "Signal doesn't Change"
+
+    def adapter(self):
+        return UnaryOpAdapter(self.NoChange, 100)
+
+    def NoChange(self, x):
+        return EqualsOrIff(x, TS.to_next(x))
