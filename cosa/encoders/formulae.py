@@ -24,9 +24,9 @@ class ExtLexer(HRLexer):
         self.rules.insert(0, Rule(r"(prev)", UnaryOpAdapter(self.Prev, 100), False))
         self.rules.insert(0, Rule(r"(next)", UnaryOpAdapter(self.Next, 100), False))
 
-        SyntacticSugarFactory.init_ssugar()
+        SyntacticSugarFactory.init_sugar()
 
-        for sugar in SyntacticSugarFactory.get_ssugar():
+        for sugar in SyntacticSugarFactory.get_sugars():
             sugar.insert_lexer_rule(self.rules)
         
         self.compile()

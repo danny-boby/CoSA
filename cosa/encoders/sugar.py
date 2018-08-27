@@ -15,11 +15,11 @@ from cosa.representation import TS
 from cosa.utils.formula_mngm import KEYWORDS, BV2B, B2BV
 
 class SyntacticSugarFactory(object):
-    ssugar = []
+    sugars = []
 
     # Additional syntactic sugar should be registered here #
     @staticmethod
-    def init_ssugar():
+    def init_sugar():
         SyntacticSugarFactory.register_sugar(Posedge())
         SyntacticSugarFactory.register_sugar(Negedge())
         SyntacticSugarFactory.register_sugar(Change())
@@ -31,16 +31,16 @@ class SyntacticSugarFactory(object):
         
     @staticmethod
     def register_sugar(sugar):
-        if sugar.get_name() not in dict(SyntacticSugarFactory.ssugar):
-            SyntacticSugarFactory.ssugar.append((sugar.get_name(), sugar))
+        if sugar.get_name() not in dict(SyntacticSugarFactory.sugars):
+            SyntacticSugarFactory.sugars.append((sugar.get_name(), sugar))
 
     @staticmethod
     def sugar_names():
-        return [x[0] for x in SyntacticSugarFactory.ssugar]
+        return [x[0] for x in SyntacticSugarFactory.sugars]
     
     @staticmethod
-    def get_ssugar():
-        return [x[1] for x in SyntacticSugarFactory.ssugar]
+    def get_sugars():
+        return [x[1] for x in SyntacticSugarFactory.sugars]
 
 class SyntacticSugar(object):
     name = "Syntactic Sugar"
@@ -87,7 +87,7 @@ class Negedge(SyntacticSugar):
     
 class Change(SyntacticSugar):
     name = "change"
-    description = "Signal Change"
+    description = "Signal Changes"
 
     def adapter(self):
         return UnaryOpAdapter(self.Change, 100)
