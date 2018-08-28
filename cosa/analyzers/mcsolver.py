@@ -18,7 +18,7 @@ from pysmt.logics import QF_ABV
 from cosa.utils.logger import Logger
 from cosa.representation import TS, HTS
 from cosa.utils.formula_mngm import substitute, get_free_variables
-from cosa.printers import TextTracePrinter, VCDTracePrinter
+from cosa.printers.trace import TextTracePrinter, VCDTracePrinter
 
 
 class VerificationStrategy(object):

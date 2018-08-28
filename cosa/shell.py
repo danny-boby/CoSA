@@ -22,7 +22,7 @@ from cosa.analyzers.mcsolver import MCConfig
 from cosa.analyzers.bmc_safety import BMCSafety
 from cosa.analyzers.bmc_ltl import BMCLTL
 from cosa.utils.logger import Logger
-from cosa.printers import PrintersFactory, PrinterType, SMVHTSPrinter
+from cosa.printers.hts import HTSPrintersFactory, HTSPrinterType, SMVHTSPrinter
 from cosa.encoders.monitors import MonitorsFactory
 from cosa.encoders.explicit_transition_system import ExplicitTSParser
 from cosa.encoders.symbolic_transition_system import SymbolicTSParser
@@ -75,7 +75,7 @@ class Config(object):
     force_expected = False
 
     def __init__(self):
-        PrintersFactory.init_printers()
+        HTSPrintersFactory.init_printers()
 
         self.parser = None
         self.strfiles = None
@@ -96,7 +96,7 @@ class Config(object):
         self.trace_all_vars = False
         self.prefix = None
         self.run_passes = True
-        self.printer = PrintersFactory.get_default().get_name()
+        self.printer = HTSPrintersFactory.get_default().get_name()
         self.translate = None
         self.smt2file = None
         self.strategy = MCConfig.get_strategies()[0][0]
@@ -224,7 +224,7 @@ def run_verification(config):
 
     if config.translate:
         Logger.log("Writing system to \"%s\""%(config.translate), 0)
-        printer = PrintersFactory.printer_by_name(config.printer)
+        printer = HTSPrintersFactory.printer_by_name(config.printer)
 
         props = []
         if config.ltl:
@@ -515,7 +515,7 @@ def main():
     trans_params.add_argument('--translate', metavar='<output file>', type=str, required=False,
                        help='translate input file.')
     
-    printers = [" - \"%s\": %s"%(x.get_name(), x.get_desc()) for x in PrintersFactory.get_printers_by_type(PrinterType.TRANSSYS)]
+    printers = [" - \"%s\": %s"%(x.get_name(), x.get_desc()) for x in HTSPrintersFactory.get_printers_by_type(HTSPrinterType.TRANSSYS)]
 
     trans_params.set_defaults(printer=config.printer)
     trans_params.add_argument('--printer', metavar='printer', type=str, nargs='?',
@@ -598,7 +598,7 @@ def main():
     if (args.problems is None) and (args.input_files is None):
         Logger.error("No input files provided")
 
-    if args.printer in [str(x.get_name()) for x in PrintersFactory.get_printers_by_type(PrinterType.TRANSSYS)]:
+    if args.printer in [str(x.get_name()) for x in HTSPrintersFactory.get_printers_by_type(HTSPrinterType.TRANSSYS)]:
         config.printer = args.printer
     else:
         Logger.error("Printer \"%s\" not found"%(args.printer))

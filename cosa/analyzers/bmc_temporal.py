@@ -20,7 +20,7 @@ from cosa.utils.formula_mngm import substitute, get_free_variables
 from cosa.representation import TS, HTS
 from cosa.encoders.coreir import CoreIRParser, SEP
 
-from cosa.printers import TextTracePrinter, VCDTracePrinter, HIDDEN
+from cosa.printers.trace import HIDDEN
 from cosa.analyzers.mcsolver import MCConfig, VerificationStrategy
 from cosa.problem import VerificationStatus
 

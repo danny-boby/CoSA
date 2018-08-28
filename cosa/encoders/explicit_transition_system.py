@@ -13,7 +13,7 @@ from pysmt.shortcuts import TRUE, FALSE, And, Or, Symbol, BV, EqualsOrIff, Impli
 from pysmt.typing import BOOL, BVType
 
 from cosa.representation import HTS, TS
-from cosa.printers import HIDDEN
+from cosa.printers.trace import HIDDEN
 from cosa.utils.logger import Logger
 from cosa.utils.formula_mngm import get_free_variables
 
