@@ -116,9 +116,19 @@ class ProblemSolver(object):
         if problem.verification == VerificationType.EQUIVALENCE:
             accepted_ver = True
             if problem.equivalence:
-                (problem.hts2, _, _) = self.parse_model(problem.relative_path, problem.equivalence, problem.abstract_clock, problem.symbolic_init, "System 2", no_clock=problem.no_clock)
+                (problem.hts2, _, _) = self.parse_model(problem.relative_path, \
+                                                        problem.equivalence, \
+                                                        problem.abstract_clock, \
+                                                        problem.symbolic_init, "System 2", \
+                                                        no_clock=problem.no_clock, \
+                                                        run_passes=problem.run_coreir_passes)
 
-            htseq, miter_out = Miter.combine_systems(problem.hts, problem.hts2, bmc_length, problem.symbolic_init, mc_config.properties, True)
+            htseq, miter_out = Miter.combine_systems(problem.hts, \
+                                                     problem.hts2, \
+                                                     bmc_length, \
+                                                     problem.symbolic_init, \
+                                                     mc_config.properties, \
+                                                     True)
 
             if mc_config.assumptions is not None:
                 assumps = [t[1] for t in sparser.parse_formulae(mc_config.assumptions)]
@@ -155,7 +165,17 @@ class ProblemSolver(object):
         (strfile, flags) = (strfile[:strfile.index(FLAG_SR)], strfile[strfile.index(FLAG_SR)+1:strfile.index(FLAG_ST)].split(FLAG_SP))
         return (strfile, flags)
         
-    def parse_model(self, relative_path, model_files, abstract_clock, symbolic_init, name=None, deterministic=False, boolean=False, no_clock=False):
+    def parse_model(self, \
+                    relative_path, \
+                    model_files, \
+                    abstract_clock, \
+                    symbolic_init, \
+                    name=None, \
+                    deterministic=False, \
+                    boolean=False, \
+                    no_clock=False, \
+                    run_passes=True):
+        
         hts = HTS("System 1")
         invar_props = []
         ltl_props = []
@@ -171,7 +191,7 @@ class ProblemSolver(object):
             parser = None
 
             if filetype in CoreIRParser.get_extensions():
-                parser = CoreIRParser(abstract_clock, symbolic_init, no_clock)
+                parser = CoreIRParser(abstract_clock, symbolic_init, no_clock, run_passes)
                 parser.boolean = boolean
                 parser.deterministic = deterministic
                 self.parser = parser
@@ -231,10 +251,20 @@ class ProblemSolver(object):
         # generate systems for each problem configuration
         systems = {}
         for si in problems.symbolic_inits:
-            (systems[('hts', si)], _, _) = self.parse_model(problems.relative_path, problems.model_file, problems.abstract_clock, si, "System 1", boolean=problems.boolean, no_clock=problems.no_clock)
+            (systems[('hts', si)], _, _) = self.parse_model(problems.relative_path, \
+                                                            problems.model_file, \
+                                                            problems.abstract_clock, si, "System 1", \
+                                                            boolean=problems.boolean, \
+                                                            no_clock=problems.no_clock, \
+                                                            run_passes=problems.run_coreir_passes)
 
         if problems.equivalence is not None:
-            (systems[('hts2', si)], _, _) = self.parse_model(problems.relative_path, problems.equivalence, problems.abstract_clock, si, "System 2", boolean=problems.boolean, no_clock=problems.no_clock)
+            (systems[('hts2', si)], _, _) = self.parse_model(problems.relative_path, \
+                                                             problems.equivalence, \
+                                                             problems.abstract_clock, si, "System 2", \
+                                                             boolean=problems.boolean, \
+                                                             no_clock=problems.no_clock, \
+                                                             run_passes=problems.run_coreir_passes)
         else:
             systems[('hts2', si)] = None
 
@@ -243,6 +273,7 @@ class ProblemSolver(object):
             problem.hts2 = systems[('hts2', problem.symbolic_init)]
             problem.abstract_clock = problems.abstract_clock
             problem.no_clock = problems.no_clock
+            problem.run_coreir_passes = problems.run_coreir_passes
             problem.relative_path = problems.relative_path
 
             if config.time or problems.time:

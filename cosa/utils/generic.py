@@ -9,6 +9,8 @@
 # limitations under the License.
 
 import math
+import os
+import sys
 
 STRING_PATTERN = "___STRING_%d___"
 string_id = 0
@@ -56,3 +58,14 @@ def new_string():
     
     string_id += 1
     return STRING_PATTERN%string_id
+
+def suppress_output():
+    devnull = open('/dev/null', 'w')
+    oldstdout = os.dup(1)
+    os.dup2(devnull.fileno(), 1)
+    return (devnull, oldstdout)
+
+def restore_output(saved_status):
+    (devnull, old_stdout) = saved_status
+    os.dup2(old_stdout, 1)
+    devnull.close()
