@@ -29,6 +29,7 @@ PASSES.append("setundef -zero -undriven")
 PASSES.append("pmuxtree")
 PASSES.append("opt")
 PASSES.append("rename -hide")
+PASSES.append("clk2fflogic")
 
 TMPFILE = "__yosys_verilog__.btor2"
 
@@ -38,9 +39,10 @@ class VerilogYosysParser(ModelParser):
     name = "Verilog"
     
     def __init__(self):
-        if shutil.which("yosys") is None:
-            Logger.error("Yosys support is not available")
+        pass
 
+    def is_available(self):
+        return shutil.which("yosys") is not None
 
     def _get_extension(self, strfile):
         return strfile.split(".")[-1]

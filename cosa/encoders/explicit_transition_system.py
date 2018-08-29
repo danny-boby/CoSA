@@ -70,6 +70,9 @@ class ExplicitTSParser(ModelParser):
     def parse_file(self, strfile, flags=None):
         with open(strfile, "r") as f:
             return self.parse_string(f.read())
+
+    def is_available(self):
+        return True
         
     def parse_string(self, strinput):
         lines = []

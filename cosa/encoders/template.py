@@ -33,6 +33,9 @@ class ModelParser(object):
     def get_extensions():
         Logger.error("Not implemented")
 
+    def is_available(self):
+        Logger.error("Not implemented")
+        
 from pysmt.parsing import Rule
         
 class SyntacticSugar(object):

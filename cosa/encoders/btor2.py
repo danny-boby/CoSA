@@ -73,6 +73,9 @@ class BTOR2Parser(ModelParser):
         with open(strfile, "r") as f:
             return self.parse_string(f.read())
 
+    def is_available(self):
+        return True
+        
     def get_extensions(self):
         return self.extensions
 

@@ -244,7 +244,7 @@ class ProblemSolver(object):
                 Logger.log("DONE", 0)
                 continue
 
-            Logger.error("Filetype \"%s\" unsupported"%filetype)
+            Logger.error("Filetype \"%s\" unsupported or parser is not available"%filetype)
 
         if Logger.level(1):
             print(hts.print_statistics(name, Logger.level(2)))

@@ -78,37 +78,38 @@ class CoreIRParser(ModelParser):
     deterministic = False
 
     enabled = True
-    
-    def __init__(self, abstract_clock=False, symbolic_init=False, no_clock=False, run_passes=True):
-        if not COREIR:
-            Logger.error("CoreIR support is not available")
+
+    def is_available(self):
+        return COREIR
             
-        self.context = coreir.Context()
-        for lib in LIBRARIES:
-            self.context.load_library(lib)
+    def __init__(self, abstract_clock=False, symbolic_init=False, no_clock=False, run_passes=True):
+        if COREIR:
+            self.context = coreir.Context()
+            for lib in LIBRARIES:
+                self.context.load_library(lib)
 
-        self.abstract_clock = abstract_clock
-        self.no_clock = no_clock
-        self.symbolic_init = symbolic_init
+            self.abstract_clock = abstract_clock
+            self.no_clock = no_clock
+            self.symbolic_init = symbolic_init
 
-        self.__init_attrnames()
+            self.__init_attrnames()
 
-        self.boolean = False
-        self.pack_connections = True
-        self.map_an2or = {}
-        self.map_or2an = {}
-        self.anonimize_names = False
+            self.boolean = False
+            self.pack_connections = True
+            self.map_an2or = {}
+            self.map_or2an = {}
+            self.anonimize_names = False
 
-        self._init_mod_map()
-        self._init_sym_map()
+            self._init_mod_map()
+            self._init_sym_map()
 
-        self.memoize_encoding = False
+            self.memoize_encoding = False
 
-        self.enc_map = {}
+            self.enc_map = {}
 
-        Logger.time = True
+            Logger.time = True
 
-        self.deterministic = False
+            self.deterministic = False
         
     @staticmethod        
     def get_extensions():

@@ -129,6 +129,9 @@ class SymbolicTSParser(ModelParser):
         with open(strfile, "r") as f:
             return self.parse_string(f.read())
 
+    def is_available(self):
+        return True
+        
     def _split_list(self, lst, delimiter):
         ret = []
         sub = []

@@ -62,7 +62,8 @@ class ModelParsersFactory(object):
     @staticmethod
     def register_parser(parser):
         if parser.get_name() not in dict(ModelParsersFactory.parsers):
-            ModelParsersFactory.parsers.append((parser.get_name(), parser))
+            if parser.is_available():
+                ModelParsersFactory.parsers.append((parser.get_name(), parser))
 
     @staticmethod
     def parser_by_name(name):
