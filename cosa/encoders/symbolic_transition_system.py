@@ -16,6 +16,7 @@ from cosa.representation import HTS, TS
 from cosa.encoders.formulae import StringParser
 from cosa.utils.logger import Logger
 from cosa.utils.formula_mngm import quote_names
+from cosa.encoders.prototype import ModelParser
 
 T_NL = "\n"
 
@@ -115,7 +116,7 @@ class STSModule(object):
     def __repr__(self):
         return "%s: %s, %s"%(self.name, self.var, self.par)
 
-class SymbolicTSParser(object):
+class SymbolicTSParser(ModelParser):
     parser = None
     extensions = ["sts"]
     

@@ -25,85 +25,13 @@ from cosa.utils.generic import dec_to_bin, dec_to_hex
 from cosa.encoders.ltl import has_ltl_operators, HRLTLPrinter
 from cosa.utils.formula_mngm import get_free_variables
 
+from cosa.printers.prototype import HTSPrinter, HTSPrinterType
+
 NL = "\n"
 VCD_SEP = "-"
 
 # Variables starting with HIDDEN are not printed
 HIDDEN = "_-_"
-
-class HTSPrinterType(object):
-    NONE = 0
-
-    c_size = 10
-    ####################
-
-    SMV = 11
-    STS = 12
-
-    TRANSSYS = 20
-
-    ####################
-
-class HTSPrintersFactory(object):
-    printers = []
-    default_printer = None
-
-    # Additional printers should be registered here #
-    @staticmethod
-    def init_printers():
-        HTSPrintersFactory.register_printer(SMVHTSPrinter(), True)
-        HTSPrintersFactory.register_printer(STSHTSPrinter(), False)
-
-    @staticmethod
-    def get_default():
-        return HTSPrintersFactory.default_printer
-
-    @staticmethod
-    def register_printer(printer, default=False):
-        if printer.get_name() not in dict(HTSPrintersFactory.printers):
-            HTSPrintersFactory.printers.append((printer.get_name(), printer))
-            if default:
-                HTSPrintersFactory.default_printer = printer
-
-    @staticmethod
-    def printer_by_name(name):
-        HTSPrintersFactory.init_printers()
-        dprint = dict(HTSPrintersFactory.printers)
-        if name not in dprint:
-            Logger.error("Printer \"%s\" is not registered"%name)
-        return dprint[name]
-
-    @staticmethod
-    def get_printers():
-        HTSPrintersFactory.init_printers()
-        return [x[0] for x in HTSPrintersFactory.printers]
-
-    @staticmethod
-    def get_printers_by_type(printertype):
-        HTSPrintersFactory.init_printers()
-        if (printertype % HTSPrinterType.c_size) == 0:
-            return [x[1] for x in HTSPrintersFactory.printers \
-                    if (x[1].TYPE < printertype) and (x[1].TYPE >= printertype-HTSPrinterType.c_size)]
-
-        return [x[1] for x in HTSPrintersFactory.printers if x[1].TYPE == printertype]
-
-class HTSPrinter(object):
-    name = "PRINTER"
-    description = "MISSING DESCRIPTION!"
-    TYPE = HTSPrinterType.NONE
-    EXT  = ".none"
-
-    def __init__(self):
-        self.stream = cStringIO()
-
-    def print_hts(self, hts):
-        pass
-
-    def get_name(self):
-        return self.name
-
-    def get_desc(self):
-        return self.description
 
 class SMVHTSPrinter(HTSPrinter):
     name = "SMV"

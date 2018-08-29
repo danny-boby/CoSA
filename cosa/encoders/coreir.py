@@ -24,7 +24,7 @@ from pysmt.smtlib.printers import SmtPrinter
 from cosa.representation import TS, HTS, L_BV, L_ABV
 from cosa.utils.generic import is_number, status_bar
 from cosa.utils.logger import Logger
-from cosa.encoders.model import ModelParser, ModelFlags
+from cosa.encoders.prototype import ModelParser, ModelFlags
 from cosa.encoders.modules import Modules, ModuleSymbols, SEP, CSEP
 from cosa.utils.generic import bin_to_dec, suppress_output, restore_output
 

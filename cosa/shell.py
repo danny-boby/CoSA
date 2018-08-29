@@ -22,7 +22,9 @@ from cosa.analyzers.mcsolver import MCConfig
 from cosa.analyzers.bmc_safety import BMCSafety
 from cosa.analyzers.bmc_ltl import BMCLTL
 from cosa.utils.logger import Logger
-from cosa.printers.hts import HTSPrintersFactory, HTSPrinterType, SMVHTSPrinter
+from cosa.printers.factory import HTSPrintersFactory
+from cosa.printers.prototype import HTSPrinterType
+from cosa.printers.hts import SMVHTSPrinter
 from cosa.encoders.monitors import MonitorsFactory
 from cosa.encoders.explicit_transition_system import ExplicitTSParser
 from cosa.encoders.symbolic_transition_system import SymbolicTSParser

@@ -16,6 +16,7 @@ from cosa.representation import HTS, TS
 from cosa.printers.trace import HIDDEN
 from cosa.utils.logger import Logger
 from cosa.utils.formula_mngm import get_free_variables
+from cosa.encoders.prototype import ModelParser
 
 import math
 
@@ -56,7 +57,7 @@ P_ID = "id"
 
 STATE_ID = "state_id"
 
-class ExplicitTSParser(object):
+class ExplicitTSParser(ModelParser):
     parser = None
     extensions = ["ets"]
 
