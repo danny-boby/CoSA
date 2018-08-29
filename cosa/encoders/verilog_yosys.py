@@ -62,11 +62,14 @@ class VerilogYosysParser(ModelParser):
         if not Logger.level(print_level):
             saved_stdout = suppress_output()
         
-        os.system(command)
+        retval = os.system(command)
 
         if not Logger.level(print_level):
             restore_output(saved_stdout)
 
+        if retval != 0:
+            Logger.error("Error in Verilog conversion")
+            
         parser = BTOR2Parser()
         ret = parser.parse_file(TMPFILE)
 
