@@ -59,7 +59,7 @@ class TextTracePrinter(TracePrinter):
         if self.all_vars:
             varlist = list(hts.vars)
         else:
-            varlist = list(hts.input_vars.union(hts.output_vars).union(hts.state_vars))
+            varlist = list(hts.input_vars.union(hts.output_vars))
             if self.extra_vars is not None:
                 varlist = list(set(varlist).union(set(self.extra_vars)))
 
