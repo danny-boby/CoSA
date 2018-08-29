@@ -31,7 +31,15 @@ PASSES.append("opt")
 PASSES.append("rename -hide")
 PASSES.append("clk2fflogic")
 
+COMMANDS = []
+COMMANDS.append("read_verilog -sv {FILES}")
+COMMANDS.append("hierarchy -top {TARGET}")
+COMMANDS.append("{PASSES}")
+COMMANDS.append("write_btor -v {BTORFILE}")
+
 TMPFILE = "__yosys_verilog__.btor2"
+
+CMD = "yosys"
 
 class VerilogYosysParser(ModelParser):
     parser = None
@@ -42,7 +50,7 @@ class VerilogYosysParser(ModelParser):
         pass
 
     def is_available(self):
-        return shutil.which("yosys") is not None
+        return shutil.which(CMD) is not None
 
     def _get_extension(self, strfile):
         return strfile.split(".")[-1]
@@ -56,8 +64,14 @@ class VerilogYosysParser(ModelParser):
         directory = "/".join(absstrfile.split("/")[:-1])
         files = ["%s/%s"%(directory, f) for f in os.listdir(directory) if self._get_extension(f) in self.extensions]
 
-        command = "yosys -p \"read_verilog -sv {FILES}; hierarchy -top {TARGET}; {PASSES}; write_btor -v {BTORFILE}\"".format(FILES=" ".join(files), TARGET=topmodule, PASSES="; ".join(PASSES), BTORFILE=TMPFILE)
+        command = "%s -p \"%s\""%(CMD, "; ".join(COMMANDS))
+        command = command.format(FILES=" ".join(files), \
+                                 TARGET=topmodule, \
+                                 PASSES="; ".join(PASSES), \
+                                 BTORFILE=TMPFILE)
 
+        Logger.log("Command: %s"%command, 2)
+        
         print_level = 3
         if not Logger.level(print_level):
             saved_stdout = suppress_output()
