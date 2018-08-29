@@ -26,10 +26,9 @@ from cosa.printers.factory import HTSPrintersFactory
 from cosa.printers.template import HTSPrinterType
 from cosa.printers.hts import SMVHTSPrinter
 from cosa.encoders.monitors import MonitorsFactory
-from cosa.encoders.explicit_transition_system import ExplicitTSParser
-from cosa.encoders.symbolic_transition_system import SymbolicTSParser
 from cosa.encoders.coreir import CoreIRParser
 from cosa.encoders.formulae import StringParser
+from cosa.encoders.factory import ModelParsersFactory
 from cosa.encoders.miter import Miter
 from cosa.encoders.ltl import ltl_reset_env, LTLParser
 from cosa.problem import Problems, VerificationStatus, VerificationType
@@ -377,11 +376,13 @@ def main():
     # Main inputs
 
     in_options = parser.add_argument_group('input options')
+
+    input_types = [" - \"%s\": %s"%(x.name, ", ".join(["*.%s"%e for e in x.extensions])) for x in ModelParsersFactory.get_parsers()]
     
     in_options.set_defaults(input_files=None)
     in_options.add_argument('-i', '--input_files', metavar='<input files>', type=str, required=False,
-                        help='comma separated list of input files.')
-
+                            help='comma separated list of input files. Supported types:\n%s'%("\n".join(input_types)))
+    
     in_options.set_defaults(problems=None)
     in_options.add_argument('--problems', metavar='<problems file>', type=str, required=False,
                        help='problems file describing the verifications to be performed.')
