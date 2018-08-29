@@ -8,10 +8,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cosa.encoders.symbolic_transition_system import SymbolicTSParser
-from cosa.encoders.explicit_transition_system import ExplicitTSParser
-from cosa.encoders.btor2 import BTOR2Parser
-from cosa.encoders.coreir import CoreIRParser
+from cosa.utils.formula_mngm import KEYWORDS
+
+class SyntacticSugarFactory(object):
+    sugars = []
+
+    # Additional syntactic sugar should be registered here #
+    @staticmethod
+    def init_sugar():
+        from cosa.encoders.sugar import Posedge, Negedge, Change, NoChange
+    
+        SyntacticSugarFactory.register_sugar(Posedge())
+        SyntacticSugarFactory.register_sugar(Negedge())
+        SyntacticSugarFactory.register_sugar(Change())
+        SyntacticSugarFactory.register_sugar(NoChange())
+
+        for name in SyntacticSugarFactory.sugar_names():
+            if name not in KEYWORDS:
+                KEYWORDS.append(name)
+        
+    @staticmethod
+    def register_sugar(sugar):
+        if sugar.get_name() not in dict(SyntacticSugarFactory.sugars):
+            SyntacticSugarFactory.sugars.append((sugar.get_name(), sugar))
+
+    @staticmethod
+    def sugar_names():
+        return [x[0] for x in SyntacticSugarFactory.sugars]
+    
+    @staticmethod
+    def get_sugars():
+        return [x[1] for x in SyntacticSugarFactory.sugars]
+    
         
 class ModelParsersFactory(object):
     parsers = []
@@ -19,15 +47,18 @@ class ModelParsersFactory(object):
     # Additional parsers should be registered here #
     @staticmethod
     def init_parsers():
+        from cosa.encoders.symbolic_transition_system import SymbolicTSParser
+        from cosa.encoders.explicit_transition_system import ExplicitTSParser
+        from cosa.encoders.btor2 import BTOR2Parser
+        from cosa.encoders.coreir import CoreIRParser
+        from cosa.encoders.verilog_yosys import VerilogYosysParser
+        
         ModelParsersFactory.register_parser(CoreIRParser())
         ModelParsersFactory.register_parser(SymbolicTSParser())
         ModelParsersFactory.register_parser(ExplicitTSParser())
         ModelParsersFactory.register_parser(BTOR2Parser())
-
-    @staticmethod
-    def get_default():
-        return ModelParsersFactory.default_parser
-
+        ModelParsersFactory.register_parser(VerilogYosysParser())
+        
     @staticmethod
     def register_parser(parser):
         if parser.get_name() not in dict(ModelParsersFactory.parsers):
@@ -44,4 +75,5 @@ class ModelParsersFactory(object):
     @staticmethod
     def get_parsers():
         ModelParsersFactory.init_parsers()
-        return [x[0] for x in ModelParsersFactory.parsers]
+        return [x[1] for x in ModelParsersFactory.parsers]
+

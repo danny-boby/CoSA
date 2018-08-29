@@ -15,6 +15,7 @@ class ModelFlags(object):
 
 class ModelParser(object):
     extensions = None
+    name = None
     
     def __init__(self):
         pass
@@ -25,6 +26,32 @@ class ModelParser(object):
     def parse_file(self, strfile, flags=None):
         Logger.error("Not implemented")
 
+    def get_name(self):
+        return self.name
+        
     @staticmethod        
     def get_extensions():
         Logger.error("Not implemented")
+
+from pysmt.parsing import Rule
+        
+class SyntacticSugar(object):
+    name = "Syntactic Sugar"
+    description = "MISSING DESCRIPTION!"
+
+    def __init__(self):
+        pass
+
+    def get_name(self):
+        return self.name
+
+    def get_desc(self):
+        return self.description
+
+    def insert_lexer_rule(self, rules):
+        rules.insert(0, Rule(r"(%s)"%self.name, self.adapter(), False))
+
+    def adapter(self):
+        Logger.error("Adapter not implemented")
+        
+        

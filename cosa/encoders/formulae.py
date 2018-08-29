@@ -15,7 +15,7 @@ from cosa.representation import TS
 from cosa.utils.formula_mngm import get_free_variables
 from cosa.utils.logger import Logger
 from cosa.utils.formula_mngm import quote_names
-from cosa.encoders.sugar import SyntacticSugarFactory
+from cosa.encoders.factory import SyntacticSugarFactory
 
 class ExtLexer(HRLexer):
     def __init__(self, env=None):

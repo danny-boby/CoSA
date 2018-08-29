@@ -12,55 +12,9 @@ from pysmt.shortcuts import Not, And, get_type, BV, EqualsOrIff
 from pysmt.parsing import Rule, UnaryOpAdapter
 from cosa.utils.logger import Logger
 from cosa.representation import TS
-from cosa.utils.formula_mngm import KEYWORDS, BV2B, B2BV
+from cosa.encoders.template import SyntacticSugar
+from cosa.utils.formula_mngm import BV2B, B2BV
 
-class SyntacticSugarFactory(object):
-    sugars = []
-
-    # Additional syntactic sugar should be registered here #
-    @staticmethod
-    def init_sugar():
-        SyntacticSugarFactory.register_sugar(Posedge())
-        SyntacticSugarFactory.register_sugar(Negedge())
-        SyntacticSugarFactory.register_sugar(Change())
-        SyntacticSugarFactory.register_sugar(NoChange())
-
-        for name in SyntacticSugarFactory.sugar_names():
-            if name not in KEYWORDS:
-                KEYWORDS.append(name)
-        
-    @staticmethod
-    def register_sugar(sugar):
-        if sugar.get_name() not in dict(SyntacticSugarFactory.sugars):
-            SyntacticSugarFactory.sugars.append((sugar.get_name(), sugar))
-
-    @staticmethod
-    def sugar_names():
-        return [x[0] for x in SyntacticSugarFactory.sugars]
-    
-    @staticmethod
-    def get_sugars():
-        return [x[1] for x in SyntacticSugarFactory.sugars]
-
-class SyntacticSugar(object):
-    name = "Syntactic Sugar"
-    description = "MISSING DESCRIPTION!"
-
-    def __init__(self):
-        pass
-
-    def get_name(self):
-        return self.name
-
-    def get_desc(self):
-        return self.description
-
-    def insert_lexer_rule(self, rules):
-        rules.insert(0, Rule(r"(%s)"%self.name, self.adapter(), False))
-
-    def adapter(self):
-        Logger.error("Adapter not implemented")
-        
 class Posedge(SyntacticSugar):
     name = "posedge"
     description = "Clock Posedge"

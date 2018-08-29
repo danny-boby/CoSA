@@ -25,7 +25,7 @@ from cosa.utils.generic import dec_to_bin, dec_to_hex
 from cosa.encoders.ltl import has_ltl_operators, HRLTLPrinter
 from cosa.utils.formula_mngm import get_free_variables
 
-from cosa.printers.prototype import HTSPrinter, HTSPrinterType
+from cosa.printers.template import HTSPrinter, HTSPrinterType
 
 NL = "\n"
 VCD_SEP = "-"

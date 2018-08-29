@@ -25,6 +25,7 @@ from cosa.encoders.symbolic_transition_system import SymbolicTSParser, SymbolicS
 from cosa.encoders.btor2 import BTOR2Parser
 from cosa.encoders.ltl import ltl_reset_env, LTLParser
 from cosa.encoders.monitors import MonitorsFactory
+from cosa.encoders.factory import ModelParsersFactory
 
 FLAG_SR = "["
 FLAG_ST = "]"
@@ -196,29 +197,38 @@ class ProblemSolver(object):
                 parser.deterministic = deterministic
                 self.parser = parser
 
-            if filetype in ExplicitTSParser.get_extensions():
-                parser = ExplicitTSParser()
+            for av_parser in ModelParsersFactory.get_parsers():
+                assert av_parser.name is not None
+                if av_parser.name == CoreIRParser.name:
+                    continue
+                if filetype in av_parser.get_extensions():
+                    parser = av_parser
+                    if not self.parser:
+                        self.parser = av_parser
+                
+            # if filetype in ExplicitTSParser.get_extensions():
+            #     parser = ExplicitTSParser()
 
-                if not self.parser:
-                    self.parser = parser
+            #     if not self.parser:
+            #         self.parser = parser
                                         
-            if filetype in SymbolicTSParser.get_extensions():
-                parser = SymbolicTSParser()
+            # if filetype in SymbolicTSParser.get_extensions():
+            #     parser = SymbolicTSParser()
 
-                if not self.parser:
-                    self.parser = parser
+            #     if not self.parser:
+            #         self.parser = parser
 
-            if filetype in SymbolicSimpleTSParser.get_extensions():
-                parser = SymbolicSimpleTSParser()
+            # if filetype in SymbolicSimpleTSParser.get_extensions():
+            #     parser = SymbolicSimpleTSParser()
 
-                if not self.parser:
-                    self.parser = parser
+            #     if not self.parser:
+            #         self.parser = parser
                     
-            if filetype in BTOR2Parser.get_extensions():
-                parser = BTOR2Parser()
+            # if filetype in BTOR2Parser.get_extensions():
+            #     parser = BTOR2Parser()
 
-                if not self.parser:
-                    self.parser = parser
+            #     if not self.parser:
+            #         self.parser = parser
                     
             if parser is not None:
                 if not os.path.isfile(strfile):

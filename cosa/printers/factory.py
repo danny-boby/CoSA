@@ -9,7 +9,7 @@
 # limitations under the License.
 
 from cosa.printers.hts import SMVHTSPrinter, STSHTSPrinter
-from cosa.printers.prototype import HTSPrinterType
+from cosa.printers.template import HTSPrinterType
 
 class HTSPrintersFactory(object):
     printers = []

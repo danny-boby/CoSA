@@ -17,7 +17,7 @@ from cosa.encoders.formulae import StringParser
 from cosa.utils.logger import Logger
 from cosa.utils.formula_mngm import quote_names, B2BV, BV2B
 from cosa.utils.generic import bin_to_dec
-from cosa.encoders.prototype import ModelParser
+from cosa.encoders.template import ModelParser
 
 NL = "\n"
 
@@ -61,10 +61,10 @@ NEXT="next"
 CONSTRAINT="constraint"
 BAD="bad"
 
-
 class BTOR2Parser(ModelParser):
     parser = None
     extensions = ["btor2","btor"]
+    name = "BTOR2"
     
     def __init__(self):
         pass

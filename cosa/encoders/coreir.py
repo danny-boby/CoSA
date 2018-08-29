@@ -24,7 +24,7 @@ from pysmt.smtlib.printers import SmtPrinter
 from cosa.representation import TS, HTS, L_BV, L_ABV
 from cosa.utils.generic import is_number, status_bar
 from cosa.utils.logger import Logger
-from cosa.encoders.prototype import ModelParser, ModelFlags
+from cosa.encoders.template import ModelParser, ModelFlags
 from cosa.encoders.modules import Modules, ModuleSymbols, SEP, CSEP
 from cosa.utils.generic import bin_to_dec, suppress_output, restore_output
 
@@ -58,6 +58,7 @@ class CoreIRModelFlags(ModelFlags):
 
 class CoreIRParser(ModelParser):
     extensions = ["json"]
+    name = "CoreIR"
     
     abstract_clock = None
     no_clock = None
@@ -78,7 +79,7 @@ class CoreIRParser(ModelParser):
 
     enabled = True
     
-    def __init__(self, abstract_clock, symbolic_init, no_clock, run_passes):
+    def __init__(self, abstract_clock=False, symbolic_init=False, no_clock=False, run_passes=True):
         if not COREIR:
             Logger.error("CoreIR support is not available")
             

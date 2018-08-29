@@ -13,10 +13,10 @@ from pysmt.shortcuts import TRUE, And, Or, Symbol, BV, EqualsOrIff, Implies
 from pysmt.typing import BOOL, BVType
 
 from cosa.representation import HTS, TS
-from cosa.encoders.formulae import StringParser
 from cosa.utils.logger import Logger
 from cosa.utils.formula_mngm import quote_names
-from cosa.encoders.prototype import ModelParser
+from cosa.encoders.template import ModelParser
+from cosa.encoders.formulae import StringParser
 
 T_NL = "\n"
 
@@ -119,6 +119,7 @@ class STSModule(object):
 class SymbolicTSParser(ModelParser):
     parser = None
     extensions = ["sts"]
+    name = "STS"
     
     def __init__(self):
         self.parser = self.__init_parser()
