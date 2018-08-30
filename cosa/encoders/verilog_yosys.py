@@ -10,6 +10,7 @@
 
 import os
 import shutil
+import re
 
 from cosa.representation import HTS, TS
 from cosa.utils.logger import Logger
@@ -27,9 +28,10 @@ PASSES.append("memory")
 PASSES.append("techmap -map +/adff2dff.v")
 PASSES.append("setundef -zero -undriven")
 PASSES.append("pmuxtree")
-PASSES.append("opt")
 PASSES.append("rename -hide")
 PASSES.append("clk2fflogic")
+PASSES.append("proc")
+PASSES.append("opt")
 
 COMMANDS = []
 COMMANDS.append("read_verilog -sv {FILES}")
@@ -41,10 +43,19 @@ TMPFILE = "__yosys_verilog__.btor2"
 
 CMD = "yosys"
 
+INCLUDE = "`include"
+
+KEYWORDS = ""
+KEYWORDS += "module wire assign else reg always endmodule end define integer generate "
+KEYWORDS += "for localparam begin input output parameter posedge negedge or and if"
+KEYWORDS = KEYWORDS.split()
+
 class VerilogYosysParser(ModelParser):
     parser = None
     extensions = ["v"]
     name = "Verilog"
+
+    files_from_dir = False
     
     def __init__(self):
         pass
@@ -54,6 +65,37 @@ class VerilogYosysParser(ModelParser):
 
     def _get_extension(self, strfile):
         return strfile.split(".")[-1]
+
+    def _collect_dependencies(self, path, top, skip=[]):
+        new_filenames = []
+        
+        with open("%s/%s"%(path, top), "r") as f:
+            filestr = f.read()
+            filestr = re.sub('(//)(.*)',' ', filestr)
+            for line in filestr.split("\n"):
+                line = re.sub('\t+',' ', re.sub(' +',' ', line))
+                if line.strip() == "":
+                    continue
+                if INCLUDE in line:
+                    new_filenames.append(re.search("\".+\"", line).group(0)[1:-1])
+                    continue
+                instantiations = re.search("([a-zA-Z][a-zA-Z_0-9]*)+( )", line)
+
+                if instantiations is not None:
+                    instance = instantiations.group(0)[:-1]
+                    if (instance in skip) or (instance in KEYWORDS):
+                        continue
+                    filename = "%s.v"%instance
+                    if os.path.isfile("%s/%s"%(path, filename)):
+                        new_filenames.append("%s.v"%instance)
+                    skip.append(instance)
+ 
+        skip.append(top)
+                            
+        for filename in new_filenames:
+            new_filenames += self._collect_dependencies(path, filename, skip)
+
+        return new_filenames
     
     def parse_file(self, strfile, flags=None):
         if flags is None:
@@ -62,7 +104,13 @@ class VerilogYosysParser(ModelParser):
         topmodule = flags[0]
         absstrfile = os.path.abspath(strfile)
         directory = "/".join(absstrfile.split("/")[:-1])
-        files = ["%s/%s"%(directory, f) for f in os.listdir(directory) if self._get_extension(f) in self.extensions]
+        filename = absstrfile.split("/")[-1]
+        
+        if self.files_from_dir:
+            files = ["%s/%s"%(directory, f) for f in os.listdir(directory) if self._get_extension(f) in self.extensions]
+        else:
+            files = ["%s/%s"%(directory, f) for f in list(set(self._collect_dependencies(directory, filename)))]
+            files.append(absstrfile)
 
         command = "%s -p \"%s\""%(CMD, "; ".join(COMMANDS))
         command = command.format(FILES=" ".join(files), \
@@ -71,7 +119,7 @@ class VerilogYosysParser(ModelParser):
                                  BTORFILE=TMPFILE)
 
         Logger.log("Command: %s"%command, 2)
-        
+
         print_level = 3
         if not Logger.level(print_level):
             saved_stdout = suppress_output()
