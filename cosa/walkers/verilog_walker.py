@@ -9,7 +9,6 @@
 # limitations under the License.
 
 import inspect
-from pyverilog.vparser.ast import *
 
 from cosa.utils.generic import class_name
 from cosa.utils.logger import Logger
@@ -74,7 +73,6 @@ class VerilogWalker(object):
             processed.append(nel)
 
         return processed[0]
-            
     
 class IdentityVerilogWalker(VerilogWalker):
 
