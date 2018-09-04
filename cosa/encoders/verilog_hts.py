@@ -10,6 +10,7 @@
 
 import re
 import os
+import math
 
 VPARSER = True
 
@@ -19,15 +20,15 @@ try:
 except:
     VPARSER = False
 
-from pysmt.shortcuts import Symbol, BV, simplify, \
-    TRUE, FALSE, \
-    And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, get_type
+from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type
+from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat
 from pysmt.typing import BOOL, BVType, ArrayType
 
 from cosa.utils.logger import Logger
 from cosa.encoders.template import ModelParser
 from cosa.walkers.verilog_walker import VerilogWalker
 from cosa.representation import HTS, TS
+from cosa.utils.generic import bin_to_dec
 
 KEYWORDS = ""
 KEYWORDS += "module wire assign else reg always endmodule end define integer generate "
@@ -74,6 +75,7 @@ class VerilogParser(ModelParser):
 
 class VerilogSTSWalker(VerilogWalker):
     varmap = {}
+    paramdic = {}
     hts = None
     ts = None
     
@@ -92,22 +94,24 @@ class VerilogSTSWalker(VerilogWalker):
     def Portlist(self, el, args):
         return args
 
-    def Wire(self, el, args):
-        return el
-
-    def Reg(self, el, args):
-        return el
-    
     def Decl(self, el, args):
-        (width, typ) = args
+        if args[0] == None:
+            print("****************************************", args)
+            return args
+        
+        direction = el.children()[0]
+        width = args[0][1]
+        typ = el.children()[0]
+        
         width = 1 if width is None else width[0]
-        prev_width = self.varmap[typ.name][0]
-        if (prev_width is not None) and (prev_width != width):
-            Logger.error("Unmatched variable size at line %d"%el.lineno)
+
+        if typ.name in self.varmap:
+            prev_width = self.varmap[typ.name][0]
+            if (prev_width is not None) and (prev_width != width):
+                Logger.error("Unmatched variable size at line %d"%el.lineno)
         
         var = Symbol(typ.name, BVType(width))
 
-        direction = el.children()[0]
         if type(direction) == Input:
             self.ts.add_input_var(var)
         elif type(direction) == Output:
@@ -120,6 +124,7 @@ class VerilogSTSWalker(VerilogWalker):
         return var
 
     def Sens(self, el, args):
+        print(self.varmap)
         var = self.varmap[el.sig.name]
 
         zero = BV(0, var.symbol_type().width)
@@ -140,7 +145,11 @@ class VerilogSTSWalker(VerilogWalker):
         return args[0]
 
     def NonblockingSubstitution(self, el, args):
-        return EqualsOrIff(TS.to_next(args[0]), args[1])
+        value = args[1]
+        if type(value) == int:
+            value = BV(value, get_type(args[0]).width)
+        
+        return EqualsOrIff(TS.to_next(args[0]), value)
     
     def SensList(self, el, args):
         return And(args)
@@ -148,28 +157,55 @@ class VerilogSTSWalker(VerilogWalker):
     def IntConst(self, el, args):
         if "'d" in el.value:
             width, value = el.value.split("'d")
+            if width == "":
+                return int(value)
             return BV(int(value), int(width))
+
+        if "'b" in el.value:
+            width, value = el.value.split("'b")
+            if width == "":
+                return int(bin_to_dec(value))
+            return BV(int(bin_to_dec(value)), int(width))
         
         return int(el.value)
 
     def Identifier(self, el, args):
-        return self.varmap[el.name]
+        if el.name in self.paramdic:
+            return self.paramdic[el.name]
+        if el.name in self.varmap:
+            return self.varmap[el.name]
+
+        return el.name
     
     def Width(self, el, args):
         return (args[0] - args[1])+1
 
     def Input(self, el, args):
-        return args
+        return (el.name, args)
     
     def Output(self, el, args):
-        return args
+        return (el.name, args)
 
+    def Wire(self, el, args):
+        return (el.name, args)
+
+    def Reg(self, el, args):
+        return (el.name, args)
+    
     def Block(self, el, args):
         return And(args)
 
     def IfStatement(self, el, args):
-        one = BV(1, get_type(args[0]).width)
-        return Ite(EqualsOrIff(args[0], one), args[1], args[2])
+        if get_type(args[0]) == BOOL:
+            condition = args[0]
+        else:
+            one = BV(1, get_type(args[0]).width)
+            condition = EqualsOrIff(args[0], one)
+        
+        if len(args) == 2:
+            return Implies(condition, args[1])
+        else:
+            return Ite(condition, args[1], args[2])
 
     def Always(self, el, args):
         return Implies(args[0], args[1])
@@ -187,3 +223,79 @@ class VerilogSTSWalker(VerilogWalker):
 
     def Source(self, el, args):
         return args[0]
+
+    # TODO: Fix operations to manage both ints and BV
+    def Divide(self, el, args):
+        return int(int(args[0])/int(args[1]))
+
+    def Minus(self, el, args):
+        return int(args[0])-int(args[1])
+
+    def Plus(self, el, args):
+        left, right = args[0], args[1]
+        if (type(left) == int) and (type(right) == int):
+            return left+right
+        
+        if type(right) == int:
+            right = BV(right, get_type(left).width)
+        return BVAdd(left, right)
+    
+    def Eq(self, el, args):
+        return EqualsOrIff(args[0], args[1])
+
+    def NotEq(self, el, args):
+        return Not(EqualsOrIff(args[0], args[1]))
+
+    def And(self, el, args):
+        return And(args)
+
+    def Ulnot(self, el, args):
+        zero = BV(0, args[0].symbol_type().width)
+        return EqualsOrIff(args[0], zero)
+
+    def Unot(self, el, args):
+        return self.Ulnot(el, args)
+    
+    def Parameter(self, el, args):
+        self.paramdic[el.name] = args[0]
+        return None
+
+    def SystemCall(self, el, args):
+        if el.syscall == "clog2":
+            return math.ceil(math.log(args[0])/math.log(2))
+
+    def Ioport(self, el, args):
+        return self.Decl(el, args)
+
+    def Partselect(self, el, args):
+        return BVExtract(args[0], args[2], args[1])
+
+    def Assign(self, el, args):
+        return el
+
+    def Pointer(self, el, args):
+        return BVExtract(args[0], args[1], args[1])
+
+    def Concat(self, el, args):
+        return args
+
+    def _rec_repeat(self, el, count):
+        if count == 1:
+            return el
+        return simplify(BVConcat(el, self._rec_repeat(el, count-1)))
+    
+    def Repeat(self, el, args):
+        return self._rec_repeat(args[0][0], args[1])
+    
+    def PortArg(self, el, args):
+        return args
+
+    def Instance(self, el, args):
+        return args
+
+    def InstanceList(self, el, args):
+        return args
+
+    def ParamArg(self, el, args):
+        return args
+

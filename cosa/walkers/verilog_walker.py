@@ -10,6 +10,13 @@
 
 import inspect
 
+VPARSER = True
+
+try:
+    from pyverilog.vparser.ast import Node
+except:
+    VPARSER = False
+
 from cosa.utils.generic import class_name
 from cosa.utils.logger import Logger
 
@@ -24,6 +31,8 @@ class VerilogWalker(object):
             self.methods = [x[0] for x in inspect.getmembers(self, predicate=inspect.ismethod)]    
         
     def analyze_element(self, el, args):
+        if not VPARSER:
+            Logger.error("Pyverilog is not available")
         Logger.log("Processing Node: %s ---> %s"%(class_name(el), None if el.children() is None else [class_name(c) for c in el.children()]), 2)
         Logger.log("Args: %s"%(str(args)), 2)
         self.__init_methods()
