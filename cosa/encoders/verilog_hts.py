@@ -20,15 +20,17 @@ try:
 except:
     VPARSER = False
 
-from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type
-from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat
-from pysmt.typing import BOOL, BVType, ArrayType
+from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type, get_model
+from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT
+from pysmt.fnode import FNode
+from pysmt.typing import BOOL, BVType, ArrayType, INT
 
 from cosa.utils.logger import Logger
 from cosa.encoders.template import ModelParser
 from cosa.walkers.verilog_walker import VerilogWalker
 from cosa.representation import HTS, TS
 from cosa.utils.generic import bin_to_dec
+from cosa.utils.formula_mngm import BV2B, get_free_variables
 
 KEYWORDS = ""
 KEYWORDS += "module wire assign else reg always endmodule end define integer generate "
@@ -78,11 +80,17 @@ class VerilogSTSWalker(VerilogWalker):
     paramdic = {}
     hts = None
     ts = None
+
+    id_vars = 0
     
     def __init__(self):
         self.hts = HTS()
         self.ts = TS()
 
+    def _fresh_symbol(self, name):
+        VerilogSTSWalker.id_vars += 1
+        return "%s__%d"%(name, VerilogSTSWalker.id_vars)
+        
     def Paramlist(self, el, args):
         return el
 
@@ -96,35 +104,50 @@ class VerilogSTSWalker(VerilogWalker):
 
     def Decl(self, el, args):
         if args[0] == None:
-            print("****************************************", args)
             return args
-        
+
         direction = el.children()[0]
-        width = args[0][1]
-        typ = el.children()[0]
+
+        if type(direction) in [Input, Output]:
+            width = args[0][1]
+            typ = el.children()[0]
+
+            width = 1 if width is None else width[0]
+
+            if typ.name in self.varmap:
+                prev_width = self.varmap[typ.name][0]
+                if (prev_width is not None) and (prev_width != width):
+                    Logger.error("Unmatched variable size at line %d"%el.lineno)
+
+            var = Symbol(typ.name, BVType(width))
+
+            if type(direction) == Input:
+                self.ts.add_input_var(var)
+            elif type(direction) == Output:
+                self.ts.add_output_var(var)
+            else:
+                self.ts.add_state_var(var)
+
+            self.varmap[typ.name] = var
+
+            return var
+
+        if type(direction) == RegArray:
+            low, high = args[0][1][1], args[0][1][0]
+            width = args[0][0]
+            vname = el.children()[0].name
+            var_idxs = []
+            for i in range(low, high+1, 1):
+                vname_idx = "%s_%d"%(vname, i)
+                var_idx = Symbol(vname_idx, BVType(width))
+                var_idxs.append(var_idx)
+                self.varmap[vname] = (vname, (low, high))
+                self.varmap[vname_idx] = var_idx
+            return var_idxs
         
-        width = 1 if width is None else width[0]
-
-        if typ.name in self.varmap:
-            prev_width = self.varmap[typ.name][0]
-            if (prev_width is not None) and (prev_width != width):
-                Logger.error("Unmatched variable size at line %d"%el.lineno)
+        Logger.error("Unmanaged type %s"%type(direction))
         
-        var = Symbol(typ.name, BVType(width))
-
-        if type(direction) == Input:
-            self.ts.add_input_var(var)
-        elif type(direction) == Output:
-            self.ts.add_output_var(var)
-        else:
-            self.ts.add_state_var(var)
-
-        self.varmap[typ.name] = var
-            
-        return var
-
     def Sens(self, el, args):
-        print(self.varmap)
         var = self.varmap[el.sig.name]
 
         zero = BV(0, var.symbol_type().width)
@@ -148,11 +171,23 @@ class VerilogSTSWalker(VerilogWalker):
         value = args[1]
         if type(value) == int:
             value = BV(value, get_type(args[0]).width)
-        
+
         return EqualsOrIff(TS.to_next(args[0]), value)
-    
+
+    def BlockingSubstitution(self, el, args):
+        left, right = args[0], args[1]
+        if type(left) == int:
+            left = BV(left, 32)
+        if type(right) == int:
+            right = BV(right, 32)
+        return EqualsOrIff(left, right)
+
     def SensList(self, el, args):
         return And(args)
+
+    def Integer(self, el, args):
+        self.varmap[el.name] = Symbol(el.name, BVType(32))
+        return None
     
     def IntConst(self, el, args):
         if "'d" in el.value:
@@ -196,20 +231,50 @@ class VerilogSTSWalker(VerilogWalker):
         return And(args)
 
     def IfStatement(self, el, args):
-        if get_type(args[0]) == BOOL:
-            condition = args[0]
+        if type(args[1]) == list:
+            # statements
+            pass
         else:
-            one = BV(1, get_type(args[0]).width)
-            condition = EqualsOrIff(args[0], one)
-        
-        if len(args) == 2:
-            return Implies(condition, args[1])
-        else:
-            return Ite(condition, args[1], args[2])
+
+            if type(args[0]) == int:
+                condition = TRUE() if args[0] == 1 else FALSE()
+            elif get_type(args[0]) == BOOL:
+                condition = args[0]
+            else:
+                one = BV(1, get_type(args[0]).width)
+                condition = EqualsOrIff(args[0], one)
+
+            if len(args) == 2:
+                return Implies(condition, args[1])
+            else:
+                return Ite(condition, args[1], args[2])
 
     def Always(self, el, args):
         return Implies(args[0], args[1])
 
+    def ForStatement(self, el, args):
+        
+        print(get_free_variables(args[0]))
+        fv = get_free_variables(args[0])
+        init_model = get_model(args[0])
+        state_c = And([EqualsOrIff(v, init_model[v]) for v in fv])
+        state_n = And([EqualsOrIff(TS.to_next(v), init_model[v]) for v in fv])
+        state = And(state_c, state_n)
+        formulae = []
+        while True:
+            print(state)
+            formula = simplify(And(state, args[3]))
+            print(get_free_variables(simplify(formula)))
+            print(formula)
+            formulae.append(formula)
+            quit(0)
+        
+        quit(0)
+
+        
+        print(args)
+        quit(0)
+    
     def ModuleDef(self, el, args):
         children = list(el.children())
         always_ids = [children.index(a) for a in children if isinstance(a, Always)]
@@ -233,6 +298,10 @@ class VerilogSTSWalker(VerilogWalker):
 
     def Plus(self, el, args):
         left, right = args[0], args[1]
+
+        if type(right) == int:
+            right = BV(right, 32)
+        
         if (type(left) == int) and (type(right) == int):
             return left+right
         
@@ -247,8 +316,14 @@ class VerilogSTSWalker(VerilogWalker):
         return Not(EqualsOrIff(args[0], args[1]))
 
     def And(self, el, args):
-        return And(args)
+        return And([BV2B(x) for x in args])
 
+    def LessThan(self, el, args):
+        left, right = args[0], args[1]
+        if type(right) == int:
+            right = BV(right, 32)
+        return BVULT(left, right)
+             
     def Ulnot(self, el, args):
         zero = BV(0, args[0].symbol_type().width)
         return EqualsOrIff(args[0], zero)
@@ -273,7 +348,24 @@ class VerilogSTSWalker(VerilogWalker):
     def Assign(self, el, args):
         return el
 
+    def _mem_access(self, address, locations, width, idx=0):
+        if len(locations) == 1:
+            return locations[0]
+        location = BV(idx, width)
+        return Ite(EqualsOrIff(address, location), locations[0], self._mem_access(address, locations[1:], width, idx+1))
+    
     def Pointer(self, el, args):
+        if type(args[0]) == tuple:
+            width = get_type(args[1]).width
+            mem_size = args[0][1]
+            mem_locations = ["%s_%d"%(args[0][0], i) for i in range(mem_size[0], mem_size[1]+1)]
+            return self._mem_access(args[1], [self.varmap[v] for v in mem_locations], width)
+
+        if type(args[1]) == FNode:
+            width = get_type(args[1]).width
+            mem_locations = [BVExtract(args[0], i, i) for i in range(width)]
+            return self._mem_access(args[1], mem_locations, width)
+        
         return BVExtract(args[0], args[1], args[1])
 
     def Concat(self, el, args):
@@ -299,3 +391,17 @@ class VerilogSTSWalker(VerilogWalker):
     def ParamArg(self, el, args):
         return args
 
+    def StringConst(self, el, args):
+        return el.value
+
+    def Localparam(self, el, args):
+        return self.Parameter(el, args)
+
+    def GenerateStatement(self, el, args):
+        return args
+
+    def Length(self, el, args):
+        return args
+
+    def RegArray(self, el, args):
+        return args

@@ -33,8 +33,10 @@ class VerilogWalker(object):
     def analyze_element(self, el, args):
         if not VPARSER:
             Logger.error("Pyverilog is not available")
-        Logger.log("Processing Node: %s ---> %s"%(class_name(el), None if el.children() is None else [class_name(c) for c in el.children()]), 2)
-        Logger.log("Args: %s"%(str(args)), 2)
+        Logger.log("(%d) Processing Node: %s ---> %s"%(el.lineno, \
+                                                       class_name(el), \
+                                                       None if el.children() is None else [class_name(c) for c in el.children()]), 2)
+        Logger.log("(%d) Args: %s"%(el.lineno, str(args)), 2)
         self.__init_methods()
         
         classname = class_name(el)
@@ -42,7 +44,7 @@ class VerilogWalker(object):
             local_handler = getattr(self, classname)
             return local_handler(el, args)
 
-        Logger.error("Unmanaged Node type \"%s\""%classname)
+        Logger.error("Unmanaged Node type \"%s\", line %d"%(classname, el.lineno))
         return el
 
     def walk(self, ast):
@@ -58,6 +60,9 @@ class VerilogWalker(object):
                 continue
             visited.append(id(el))
             if isinstance(el, Node) and len(list(el.children())) > 0:
+                Logger.log("(%d) Collecting Node: %s ---> %s"%(el.lineno, \
+                                                               class_name(el), \
+                                                               None if el.children() is None else [class_name(c) for c in el.children()]), 2)
                 child = list(el.children())
                 to_visit = to_visit[:i] + child + to_visit[i:]
 
