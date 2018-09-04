@@ -39,7 +39,7 @@ class ProblemSolver(object):
     def __init__(self):
         pass
 
-    def solve_problem(self, problem, config):
+    def solve_problem(self, problem, config, prev_true_props=None):
         Logger.log("\n*** Analyzing problem \"%s\" ***"%(problem), 1)
         Logger.msg("Solving \"%s\" "%problem.name, 0, not(Logger.level(1)))
         
@@ -67,6 +67,11 @@ class ProblemSolver(object):
 
         [mc_config.properties, mc_config.lemmas, mc_config.assumptions] = parsing_defs
 
+        if prev_true_props is not None:
+            if mc_config.assumptions is None:
+                mc_config.assumptions = []
+            mc_config.assumptions += prev_true_props
+        
         assumps = None
         lemmas = None
 
@@ -278,6 +283,9 @@ class ProblemSolver(object):
         else:
             systems[('hts2', si)] = None
 
+        prev_true_props = None            
+        assume_if_true = config.assume_if_true or problems.assume_if_true
+        
         for problem in problems.problems:
             problem.hts = systems[('hts', problem.symbolic_init)]
             problem.hts2 = systems[('hts2', problem.symbolic_init)]
@@ -285,12 +293,19 @@ class ProblemSolver(object):
             problem.no_clock = problems.no_clock
             problem.run_coreir_passes = problems.run_coreir_passes
             problem.relative_path = problems.relative_path
-
+            
             if config.time or problems.time:
                 timer_solve = Logger.start_timer("Problem %s"%problem.name, False)
             try:
-                self.solve_problem(problem, config)
+                self.solve_problem(problem, config, prev_true_props)
                 Logger.msg(" %s\n"%problem.status, 0, not(Logger.level(1)))
+
+                if (assume_if_true) and \
+                   (problem.status == VerificationStatus.TRUE) and \
+                   (problem.verification == VerificationType.SAFETY):
+                    if prev_true_props is None:
+                        prev_true_props = []
+                    prev_true_props.append(problem.formula)
                 
                 if config.time or problems.time:
                     problem.time = Logger.get_timer(timer_solve, False)

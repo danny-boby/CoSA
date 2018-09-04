@@ -453,6 +453,10 @@ def main():
     ver_params.set_defaults(ninc=False)
     ver_params.add_argument('--ninc', dest='ninc', action='store_true',
                        help='disables incrementality.')
+
+    ver_params.set_defaults(assume_if_true=False)
+    ver_params.add_argument('--assume-if-true', dest='assume_if_true', action='store_true',
+                       help='add true properties as assumptions.')
     
     ver_params.set_defaults(solver_name=config.solver_name)
     ver_params.add_argument('--solver-name', metavar='<Solver Name>', type=str, required=False,
@@ -581,6 +585,7 @@ def main():
     config.time = args.time
     config.no_clock = args.no_clock
     # config.monitors = args.monitors
+    config.assume_if_true = args.assume_if_true
 
     if len(sys.argv)==1:
         parser.print_help()

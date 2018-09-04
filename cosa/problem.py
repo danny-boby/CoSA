@@ -66,7 +66,8 @@ class Problems(object):
     relative_path = None
     boolean = None
     time = False
-
+    assume_if_true = False
+    
     def __init__(self):
         self.problems = []
         # need to create TS for each symbolic init value
