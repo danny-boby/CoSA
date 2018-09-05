@@ -74,6 +74,7 @@ class Config(object):
     time = False
     monitors = None
     force_expected = False
+    assume_if_true = False
 
     def __init__(self):
         HTSPrintersFactory.init_printers()
@@ -112,6 +113,7 @@ class Config(object):
         self.incremental = True
         self.deterministic = False
         self.time = False
+        self.assume_if_true = False
         
 def trace_printed(msg, hr_trace, vcd_trace):
     vcd_msg = ""
