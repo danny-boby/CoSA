@@ -13,7 +13,7 @@ import inspect
 VPARSER = True
 
 try:
-    from pyverilog.vparser.ast import Node
+    from pyverilog.vparser.ast import Node, ModuleDef
 except:
     VPARSER = False
 
@@ -22,15 +22,19 @@ from cosa.utils.logger import Logger
 
 class VerilogWalker(object):
     methods = None
+    modulesdic = None
     
     def __init__(self):
         pass
 
+    def reset_structures(self, modulename):
+        Logger.error("Unimplemented")
+    
     def __init_methods(self):
         if self.methods is None:
             self.methods = [x[0] for x in inspect.getmembers(self, predicate=inspect.ismethod)]    
         
-    def analyze_element(self, el, args):
+    def analyze_element(self, modulename, el, args):
         if not VPARSER:
             Logger.error("Pyverilog is not available")
         Logger.log("(%d) Processing Node: %s ---> %s"%(el.lineno, \
@@ -42,12 +46,20 @@ class VerilogWalker(object):
         classname = class_name(el)
         if classname in self.methods:
             local_handler = getattr(self, classname)
-            return local_handler(el, args)
+            return local_handler(modulename, el, args)
 
         Logger.error("Unmanaged Node type \"%s\", line %d"%(classname, el.lineno))
         return el
 
-    def walk(self, ast):
+    def walk(self, ast, modulename):
+        description = ast.children()[0]
+        modules = description.children()
+        self.modulesdic = dict([(m.name, m) for m in modules])
+        self.reset_structures(modulename)
+        return self.walk_module(ast, modulename)
+    
+    def walk_module(self, ast, modulename):
+        Logger.log("(%d) Parsing module \"%s\""%(ast.lineno, modulename), 2)
         to_visit = [ast]
         visited = []
         args = None
@@ -81,86 +93,79 @@ class VerilogWalker(object):
             if id(el) in memoization:
                 nel = memoization[id(el)]
             else:
-                nel = self.analyze_element(el, children)
+                nel = self.analyze_element(modulename, el, children)
                 memoization[id(el)] = nel
             prevels.append(el)
             processed.append(nel)
 
+        Logger.log("(%d) Done parsing module \"%s\""%(ast.lineno, modulename), 2)
+            
         return processed[0]
     
 class IdentityVerilogWalker(VerilogWalker):
 
-    def Paramlist(self, el, args):
+    def Paramlist(self, modulename, el, args):
         return el
 
-    def Port(self, el, args):
+    def Port(self, modulename, el, args):
         return el
 
-    def Portlist(self, el, args):
+    def Portlist(self, modulename, el, args):
         return el
 
-    def Wire(self, el, args):
+    def Wire(self, modulename, el, args):
         return el
 
-    def Reg(self, el, args):
+    def Reg(self, modulename, el, args):
         return el
     
-    def Decl(self, el, args):
+    def Decl(self, modulename, el, args):
         return el
 
-    def Sens(self, el, args):
+    def Sens(self, modulename, el, args):
         return el
         
-    def Lvalue(self, el, args):
+    def Lvalue(self, modulename, el, args):
         return el
 
-    def Rvalue(self, el, args):
+    def Rvalue(self, modulename, el, args):
         return el
 
-    def NonblockingSubstitution(self, el, args):
+    def NonblockingSubstitution(self, modulename, el, args):
         return el
     
-    def SensList(self, el, args):
+    def SensList(self, modulename, el, args):
         return el
     
-    def IntConst(self, el, args):
+    def IntConst(self, modulename, el, args):
         return el
 
-    def Identifier(self, el, args):
+    def Identifier(self, modulename, el, args):
         return el
     
-    def Width(self, el, args):
+    def Width(self, modulename, el, args):
         return el
 
-    def Input(self, el, args):
+    def Input(self, modulename, el, args):
         return el
     
-    def Output(self, el, args):
+    def Output(self, modulename, el, args):
         return el
 
-    def Block(self, el, args):
+    def Block(self, modulename, el, args):
         return el
 
-    def IfStatement(self, el, args):
+    def IfStatement(self, modulename, el, args):
         return el
 
-    def Always(self, el, args):
+    def Always(self, modulename, el, args):
         return el
 
-    def ModuleDef(self, el, args):
+    def ModuleDef(self, modulename, el, args):
         return el
 
-    def Description(self, el, args):
+    def Description(self, modulename, el, args):
         return el
 
-    def Source(self, el, args):
-        return el
-    
-    def analyze_element(self, el, args):
-        classname = class_name(el)
-        if classname in self.methods:
-            local_handler = getattr(self, classname)
-            return local_handler(el, args)
-
-        Logger.error("Unmanaged Node type \"%s\""%classname)
+    def Source(self, modulename, el, args):
         return el

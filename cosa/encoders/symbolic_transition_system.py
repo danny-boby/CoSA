@@ -452,17 +452,21 @@ class SymbolicTSParser(ModelParser):
     def get_extensions():
         return SymbolicTSParser.extensions
     
-class SymbolicSimpleTSParser(object):
+class SymbolicSimpleTSParser(ModelParser):
     parser = None
     extensions = ["ssts"]
-
-    @staticmethod        
-    def get_extensions():
-        return SymbolicSimpleTSParser.extensions
+    name = "SimpleSTS"
     
     def __init__(self):
         pass
 
+    @staticmethod        
+    def get_extensions():
+        return SymbolicSimpleTSParser.extensions
+
+    def is_available(self):
+        return True
+    
     def remap_an2or(self, name):
         return name
 

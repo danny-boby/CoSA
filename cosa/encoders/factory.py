@@ -47,7 +47,7 @@ class ModelParsersFactory(object):
     # Additional parsers should be registered here #
     @staticmethod
     def init_parsers():
-        from cosa.encoders.symbolic_transition_system import SymbolicTSParser
+        from cosa.encoders.symbolic_transition_system import SymbolicTSParser, SymbolicSimpleTSParser
         from cosa.encoders.explicit_transition_system import ExplicitTSParser
         from cosa.encoders.btor2 import BTOR2Parser
         from cosa.encoders.coreir import CoreIRParser
@@ -56,6 +56,7 @@ class ModelParsersFactory(object):
         
         ModelParsersFactory.register_parser(CoreIRParser())
         ModelParsersFactory.register_parser(SymbolicTSParser())
+        ModelParsersFactory.register_parser(SymbolicSimpleTSParser())
         ModelParsersFactory.register_parser(ExplicitTSParser())
         ModelParsersFactory.register_parser(BTOR2Parser())
         # ModelParsersFactory.register_parser(VerilogYosysParser())

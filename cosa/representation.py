@@ -175,7 +175,11 @@ class HTS(object):
                 self.add_lemma(lemma)
 
     def newname(self, varname, path=[]):
-        return varname.replace(self.name, ".".join(path))
+        ret = varname.replace(self.name, ".".join(path)).strip()
+        if ret[0] == ".":
+            ret = ret[1:]
+            print(ret)
+        return ret
 
     def get_TS(self):
         ts = TS()
@@ -190,7 +194,6 @@ class HTS(object):
         return ts
     
     def flatten(self, path=[]):
-        
         vardic = dict([(v.symbol_name(), v) for v in self.vars])
         for sub in self.subs:
             instance, actual, module = sub
@@ -203,7 +206,15 @@ class HTS(object):
             links = TRUE()
             for i in range(len(actual)):
                 local_var = ".".join(path+[actual[i]])
+                if local_var[0] == ".":
+                    local_var = local_var[1:]
                 module_var = sub[2].newname(formal[i].symbol_name(), path+[sub[0]])
+                assert sub[2].name != ""
+                if module_var not in vardic:
+                    modulevar = Symbol(module_var, formal[i].symbol_type())
+                    self.vars.add(modulevar)
+                    vardic[module_var] = modulevar
+                
                 links = And(links, EqualsOrIff(vardic[local_var], vardic[module_var]))
                 
             ts = TS("LINKS")
