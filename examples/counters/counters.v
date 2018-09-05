@@ -1,4 +1,4 @@
-module Counter #(parameter SIZE = 10) (input clk, output [SIZE-1:0] q);
+module Counters #(parameter SIZE = 10) (input clk, output [SIZE-1:0] q);
 
    reg [SIZE-1:0] val1;
    reg [SIZE-1:0] val2;

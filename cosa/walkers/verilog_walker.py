@@ -58,7 +58,7 @@ class VerilogWalker(object):
         for m in modules:
             if type(m) == ModuleDef:
                 self.modulesdic[m.name] = m
-        return self.walk_module(ast, modulename)
+        return self.walk_module(self.modulesdic[modulename], modulename)
     
     def walk_module(self, ast, modulename):
         Logger.log("(%d) Parsing module \"%s\""%(ast.lineno, ast.name), 2)

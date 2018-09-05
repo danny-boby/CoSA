@@ -8,7 +8,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pysmt.shortcuts import Symbol, And, TRUE, simplify, EqualsOrIff
+from pysmt.shortcuts import Symbol, And, TRUE, simplify, EqualsOrIff, get_type
 from cosa.utils.formula_mngm import get_free_variables, substitute
 
 NEXT = "_N"
@@ -72,6 +72,9 @@ class HTS(object):
 
     def add_output_var(self, var):
         self.output_vars.add(var)
+        self.vars.add(var)
+
+    def add_var(self, var):
         self.vars.add(var)
         
     def update_logic(self, logic):
@@ -202,19 +205,32 @@ class HTS(object):
             (ts.init, ts.trans, ts.invar) = module.flatten(path+[instance])
             self.add_ts(ts)
 
+            def full_path(name, path):
+                ret = ".".join(path+[name])
+                if ret[0] == ".":
+                    return ret[1:]
+                return ret
+            
             links = TRUE()
             for i in range(len(actual)):
-                local_var = ".".join(path+[actual[i]])
-                if local_var[0] == ".":
-                    local_var = local_var[1:]
+                if type(actual[i]) == str:
+                    local_expr = vardic[full_path(actual[i], path)]
+                else:
+                    local_vars = [(v, full_path(v.symbol_name(), path)) for v in get_free_variables(actual[i])]
+                    for local_var in local_vars:
+                        if local_var[1] not in vardic:
+                            modulevar = Symbol(local_var[1], local_var[0].symbol_type())
+                            self.vars.add(modulevar)
+                            vardic[local_var[1]] = modulevar
+                    
+                    local_expr = substitute(actual[i], dict([(v[0].symbol_name(), vardic[v[1]].symbol_name()) for v in local_vars]))
                 module_var = sub[2].newname(formal[i].symbol_name(), path+[sub[0]])
                 assert sub[2].name != ""
                 if module_var not in vardic:
                     modulevar = Symbol(module_var, formal[i].symbol_type())
                     self.vars.add(modulevar)
                     vardic[module_var] = modulevar
-                
-                links = And(links, EqualsOrIff(vardic[local_var], vardic[module_var]))
+                links = And(links, EqualsOrIff(local_expr, vardic[module_var]))
                 
             ts = TS("LINKS")
             ts.invar = links

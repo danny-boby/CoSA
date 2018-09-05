@@ -21,7 +21,7 @@ except:
     VPARSER = False
 
 from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type, get_model, is_sat
-from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT, BVXor
+from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT, BVXor, BVOr
 from pysmt.fnode import FNode
 from pysmt.typing import BOOL, BVType, ArrayType, INT
 
@@ -64,7 +64,7 @@ class VerilogParser(ModelParser):
         
         absstrfile = os.path.abspath(strfile)
         ast, directives = parse([absstrfile])
-        hts = self.walker.walk(ast, "")
+        hts = self.walker.walk(ast, flags[0])
         hts.flatten()
         return (hts, invar_props, ltl_props)
 
@@ -116,7 +116,8 @@ class VerilogSTSWalker(VerilogWalker):
 
     def Port(self, modulename, el, args):
         if el.width is None:
-            self.varmap[el.name] = (el.width, el.type)
+            self.add_var(modulename, el.name, (el.width, el.type))
+            #self.varmap[el.name] = (el.width, el.type)
         return el
 
     def Portlist(self, modulename, el, args):
@@ -127,6 +128,9 @@ class VerilogSTSWalker(VerilogWalker):
         
         return args
 
+    def add_var(self, modulename, varname, value):
+        self.varmap[varname] = value
+    
     def Decl(self, modulename, el, args):
         if args[0] == None:
             return args
@@ -137,8 +141,12 @@ class VerilogSTSWalker(VerilogWalker):
             width = args[0][1]
             typ = el.children()[0]
 
-            width = 1 if width is None else width[0]
-
+            width = 1 if width is None else width[0]            
+            # if (typ.name in self.varmap) and (width is None):
+            #     width = self.varmap[typ.name].symbol_type().width
+            # else:
+            #     width = 1 if width is None else width[0]
+                
             if typ.name in self.varmap:
                 prev_width = self.varmap[typ.name][0] if type(self.varmap[typ.name]) is not FNode else self.varmap[typ.name].symbol_type().width
                 if (prev_width is not None) and (prev_width != width):
@@ -153,7 +161,7 @@ class VerilogSTSWalker(VerilogWalker):
             else:
                 self.ts.add_state_var(var)
 
-            self.varmap[typ.name] = var
+            self.add_var(modulename, typ.name, var)
 
             return var
 
@@ -166,8 +174,10 @@ class VerilogSTSWalker(VerilogWalker):
                 vname_idx = "%s_%d"%(vname, i)
                 var_idx = Symbol(self.varname(modulename, vname_idx), BVType(width))
                 var_idxs.append(var_idx)
-                self.varmap[vname] = (vname, (low, high))
-                self.varmap[vname_idx] = var_idx
+                #self.varmap[vname] = (vname, (low, high))
+                self.add_var(modulename, vname, (vname, (low, high)))
+                #self.varmap[vname_idx] = var_idx
+                self.add_var(modulename, vname_idx, var_idx)
                 self.ts.add_state_var(var_idx)
             return var_idxs
         
@@ -215,7 +225,9 @@ class VerilogSTSWalker(VerilogWalker):
         return And(args)
 
     def Integer(self, modulename, el, args):
-        self.varmap[el.name] = Symbol(self.varname(modulename, el.name), BVType(MAXINT))
+        intvar = Symbol(self.varname(modulename, el.name), BVType(MAXINT))
+        #self.varmap[el.name] = intvar
+        self.add_var(modulename, el.name, intvar)
         return None
     
     def IntConst(self, modulename, el, args):
@@ -351,12 +363,19 @@ class VerilogSTSWalker(VerilogWalker):
     def NotEq(self, modulename, el, args):
         return Not(EqualsOrIff(args[0], args[1]))
 
+    def to_bool(self, el):
+        if type(el) == int:
+            return FALSE() if el == 0 else TRUE()
+        return BV2B(el)
+    
     def And(self, modulename, el, args):
-        return And([BV2B(x) for x in args])
+        return And([self.to_bool(x) for x in args])
 
     def Xor(self, modulename, el, args):
-        print(len(args))
         return BVXor(args[0], args[1])
+
+    def Or(self, modulename, el, args):
+        return BVOr(B2BV(args[0]), B2BV(args[1]))
     
     def LessThan(self, modulename, el, args):
         left, right = args[0], args[1]
@@ -365,6 +384,8 @@ class VerilogSTSWalker(VerilogWalker):
         return BVULT(left, right)
              
     def Ulnot(self, modulename, el, args):
+        if type(args[0]) == int:
+            return TRUE() if el == 0 else FALSE()
         zero = BV(0, args[0].symbol_type().width)
         return EqualsOrIff(args[0], zero)
 
@@ -407,13 +428,14 @@ class VerilogSTSWalker(VerilogWalker):
         if type(args[1]) == FNode:
             width_mem = get_type(args[0]).width
             width_idx = get_type(args[1]).width
-            print(args[1], width_mem, width_idx, self.paramdic, args[0], get_type(args[0]))
             mem_locations = [BVExtract(args[0], i, i) for i in range(width_mem)]
             return self._mem_access(args[1], mem_locations, width_mem, width_idx)
         
         return BVExtract(args[0], args[1], args[1])
 
     def Concat(self, modulename, el, args):
+        if len(args) == 1:
+            return args[0]
         return BVConcat(args[0], args[1])
 
     def _rec_repeat(self, el, count):
@@ -422,7 +444,7 @@ class VerilogSTSWalker(VerilogWalker):
         return simplify(BVConcat(el, self._rec_repeat(el, count-1)))
     
     def Repeat(self, modulename, el, args):
-        return self._rec_repeat(args[0][0], args[1])
+        return self._rec_repeat(args[0], args[1])
     
     def PortArg(self, modulename, el, args):
         return (el.portname, args[0])
@@ -440,34 +462,39 @@ class VerilogSTSWalker(VerilogWalker):
         width = args[width_idx[0]] if len(width_idx) > 0 else None
 
         param_modulename = el.module
-        
-        if len(paramargs) > 0:
-            param_modulename = "%s__%s"%(param_modulename, "_".join(["%s%s"%(p[0], p[1]) for p in paramargs]))
 
-        print(self.modulesdic)
         if el.module not in self.modulesdic:
             Logger.error("Module definition \"%s\" not found, line %d"%(el.module, el.lineno))
+
+        prev_varmap = self.varmap
 
         if param_modulename not in self.subhtsdic:
             instancewalker = VerilogSTSWalker()
             instancewalker.paramdic = dict(paramargs)
             instancewalker.modulesdic = self.modulesdic
-            subhts = instancewalker.walk(self.modulesdic[el.module], param_modulename)
+            subhts = instancewalker.walk_module(self.modulesdic[el.module], param_modulename)
             self.subhtsdic[param_modulename] = subhts
 
+        self.varmap = prev_varmap
+            
         subhts = self.subhtsdic[param_modulename]
         subhts.name = param_modulename
 
-        formulaargs = [portargs.index(p) for p in portargs if not p[1].is_symbol()]
-        for idx in formulaargs:
-            newvar = Symbol("%s_%s_param%s"%(param_modulename, el.name, idx), get_type(portargs[idx]))
-            self.ts.invar = And(self.ts.invar, EqualsOrIff(newvar, portargs[idx]))
-            self.ts.add_var(newvar)
-            portargs[idx] = (portargs[idx][0], newvar)
+        # formulaargs = [portargs.index(p) for p in portargs if not p[1].is_symbol()]
+        # for idx in formulaargs:
+        #     newvarname = "%s_%s_param%s"%(param_modulename, el.name, idx)
+        #     if modulename != "":
+        #         print(modulename)
+        #         newvarname = "%s.%s"%(modulename, newvarname)
+        #     newvar = Symbol(newvarname, get_type(portargs[idx][1]))
+        #     print(newvar, portargs[idx][1])
+        #     print(get_type(newvar), get_type(portargs[idx][1]))
+        #     self.ts.invar = And(self.ts.invar, EqualsOrIff(newvar, portargs[idx][1]))
+        #     self.hts.add_var(newvar)
+        #     portargs[idx] = (portargs[idx][0], newvar)
+        #     print(portargs[idx])
             
-        print(formulaargs, portargs)
-        
-        self.hts.add_sub(el.name, subhts, tuple([a[1].symbol_name() for a in portargs]))
+        self.hts.add_sub(el.name, subhts, tuple([a[1] for a in portargs]))
         return args
 
     def InstanceList(self, modulename, el, args):
