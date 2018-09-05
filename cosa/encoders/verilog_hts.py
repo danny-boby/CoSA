@@ -20,7 +20,7 @@ try:
 except:
     VPARSER = False
 
-from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type, get_model
+from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type, get_model, is_sat
 from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT
 from pysmt.fnode import FNode
 from pysmt.typing import BOOL, BVType, ArrayType, INT
@@ -180,7 +180,7 @@ class VerilogSTSWalker(VerilogWalker):
             left = BV(left, 32)
         if type(right) == int:
             right = BV(right, 32)
-        return EqualsOrIff(left, right)
+        return EqualsOrIff(TS.to_next(left), right)
 
     def SensList(self, el, args):
         return And(args)
@@ -253,27 +253,28 @@ class VerilogSTSWalker(VerilogWalker):
         return Implies(args[0], args[1])
 
     def ForStatement(self, el, args):
-        
-        print(get_free_variables(args[0]))
         fv = get_free_variables(args[0])
-        init_model = get_model(args[0])
-        state_c = And([EqualsOrIff(v, init_model[v]) for v in fv])
-        state_n = And([EqualsOrIff(TS.to_next(v), init_model[v]) for v in fv])
-        state = And(state_c, state_n)
+        model = get_model(args[0])
+        state_n = [(v, model[v]) for v in fv]
+        state_c = [(TS.get_ref_var(v), model[v]) for v in fv]
+        state = dict(state_c + state_n)
         formulae = []
         while True:
-            print(state)
-            formula = simplify(And(state, args[3]))
-            print(get_free_variables(simplify(formula)))
-            print(formula)
+            # Evaluate new instance
+            formula = simplify(args[3].substitute(state))
             formulae.append(formula)
-            quit(0)
-        
-        quit(0)
 
-        
-        print(args)
-        quit(0)
+            # Compute next step
+            model = get_model(And(And([EqualsOrIff(v[0], v[1]) for v in state_c]), args[2]))
+            state_n = [(v, model[v]) for v in fv]
+            state_c = [(TS.get_ref_var(v), model[v]) for v in fv]
+            state = dict(state_c + state_n)
+
+            # Exit condition
+            if not is_sat(And(And([EqualsOrIff(v[0], v[1]) for v in state_c]), args[1])):
+                break
+
+        return And(formulae)
     
     def ModuleDef(self, el, args):
         children = list(el.children())
