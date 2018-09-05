@@ -54,8 +54,10 @@ class VerilogWalker(object):
     def walk(self, ast, modulename):
         description = ast.children()[0]
         modules = description.children()
-        self.modulesdic = dict([(m.name, m) for m in modules])
         self.reset_structures(modulename)
+        for m in modules:
+            if type(m) == ModuleDef:
+                self.modulesdic[m.name] = m
         return self.walk_module(ast, modulename)
     
     def walk_module(self, ast, modulename):

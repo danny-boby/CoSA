@@ -37,6 +37,8 @@ KEYWORDS += "module wire assign else reg always endmodule end define integer gen
 KEYWORDS += "for localparam begin input output parameter posedge negedge or and if"
 KEYWORDS = KEYWORDS.split()
 
+MAXINT = 32
+
 POSEDGE = "posedge"
 NEGEDGE = "negedge"
 
@@ -95,8 +97,9 @@ class VerilogSTSWalker(VerilogWalker):
         self.hts = HTS(modulename)
         self.ts = TS()
         self.varmap = {}
-        self.paramdic = {}
         self.subhtsdic = {}
+        if self.paramdic is None: self.paramdic = {}
+        if self.modulesdic is None: self.modulesdic = {} 
         
     def _fresh_symbol(self, name):
         VerilogSTSWalker.id_vars += 1
@@ -199,16 +202,16 @@ class VerilogSTSWalker(VerilogWalker):
     def BlockingSubstitution(self, modulename, el, args):
         left, right = args[0], args[1]
         if type(left) == int:
-            left = BV(left, 32)
+            left = BV(left, MAXINT)
         if type(right) == int:
-            right = BV(right, 32)
+            right = BV(right, MAXINT)
         return EqualsOrIff(TS.to_next(left), right)
 
     def SensList(self, modulename, el, args):
         return And(args)
 
     def Integer(self, modulename, el, args):
-        self.varmap[el.name] = Symbol(self.varname(modulename, el.name), BVType(32))
+        self.varmap[el.name] = Symbol(self.varname(modulename, el.name), BVType(MAXINT))
         return None
     
     def IntConst(self, modulename, el, args):
@@ -334,7 +337,7 @@ class VerilogSTSWalker(VerilogWalker):
             right = BV(right, get_type(left).width)
 
         if (type(right) == int):
-            right = BV(right, 32)
+            right = BV(right, MAXINT)
                     
         return BVAdd(left, right)
     
@@ -350,7 +353,7 @@ class VerilogSTSWalker(VerilogWalker):
     def LessThan(self, modulename, el, args):
         left, right = args[0], args[1]
         if type(right) == int:
-            right = BV(right, 32)
+            right = BV(right, MAXINT)
         return BVULT(left, right)
              
     def Ulnot(self, modulename, el, args):
@@ -426,13 +429,20 @@ class VerilogSTSWalker(VerilogWalker):
         paramargs.sort()
         width = args[width_idx[0]] if len(width_idx) > 0 else None
 
-        if el.module not in self.subhtsdic:
+        param_modulename = el.module
+        
+        if len(paramargs) > 0:
+            param_modulename = "%s__%s"%(param_modulename, "_".join(["%s%s"%(p[0], p[1]) for p in paramargs]))
+            
+        if param_modulename not in self.subhtsdic:
             instancewalker = VerilogSTSWalker()
-            subhts = instancewalker.walk(self.modulesdic[el.module], el.module)
-            self.subhtsdic[el.module] = subhts
+            instancewalker.paramdic = dict(paramargs)
+            subhts = instancewalker.walk(self.modulesdic[el.module], param_modulename)
+            self.subhtsdic[param_modulename] = subhts
 
-        subhts = self.subhtsdic[el.module]
-
+        subhts = self.subhtsdic[param_modulename]
+        subhts.name = param_modulename
+        
         self.hts.add_sub(el.name, subhts, tuple([a[1].symbol_name() for a in portargs]))
         return args
 

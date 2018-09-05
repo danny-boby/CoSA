@@ -178,7 +178,6 @@ class HTS(object):
         ret = varname.replace(self.name, ".".join(path)).strip()
         if ret[0] == ".":
             ret = ret[1:]
-            print(ret)
         return ret
 
     def get_TS(self):
