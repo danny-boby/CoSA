@@ -21,7 +21,7 @@ except:
     VPARSER = False
 
 from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type, get_model, is_sat
-from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT
+from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT, BVXor
 from pysmt.fnode import FNode
 from pysmt.typing import BOOL, BVType, ArrayType, INT
 
@@ -30,14 +30,14 @@ from cosa.encoders.template import ModelParser
 from cosa.walkers.verilog_walker import VerilogWalker
 from cosa.representation import HTS, TS
 from cosa.utils.generic import bin_to_dec
-from cosa.utils.formula_mngm import BV2B, get_free_variables
+from cosa.utils.formula_mngm import B2BV, BV2B, get_free_variables
 
 KEYWORDS = ""
 KEYWORDS += "module wire assign else reg always endmodule end define integer generate "
 KEYWORDS += "for localparam begin input output parameter posedge negedge or and if"
 KEYWORDS = KEYWORDS.split()
 
-MAXINT = 32
+MAXINT = 64
 
 POSEDGE = "posedge"
 NEGEDGE = "negedge"
@@ -85,6 +85,7 @@ class VerilogSTSWalker(VerilogWalker):
     varmap = None
     paramdic = None
     subhtsdic = None
+    modulesdic = None
     hts = None
     ts = None
 
@@ -173,6 +174,9 @@ class VerilogSTSWalker(VerilogWalker):
         Logger.error("Unmanaged type %s"%type(direction))
         
     def Sens(self, modulename, el, args):
+        if el.sig is None:
+            return TRUE()
+            
         var = self.varmap[el.sig.name]
 
         zero = BV(0, var.symbol_type().width)
@@ -350,6 +354,10 @@ class VerilogSTSWalker(VerilogWalker):
     def And(self, modulename, el, args):
         return And([BV2B(x) for x in args])
 
+    def Xor(self, modulename, el, args):
+        print(len(args))
+        return BVXor(args[0], args[1])
+    
     def LessThan(self, modulename, el, args):
         left, right = args[0], args[1]
         if type(right) == int:
@@ -379,32 +387,34 @@ class VerilogSTSWalker(VerilogWalker):
         return BVExtract(args[0], args[2], args[1])
 
     def Assign(self, modulename, el, args):
-        invar = EqualsOrIff(args[0], args[1])
+        invar = EqualsOrIff(B2BV(args[0]), B2BV(args[1]))
         self.ts.invar = And(self.ts.invar, invar)
         return el
 
-    def _mem_access(self, address, locations, width, idx=0):
+    def _mem_access(self, address, locations, width_mem, width_idx, idx=0):
         if len(locations) == 1:
             return locations[0]
-        location = BV(idx, width)
-        return Ite(EqualsOrIff(address, location), locations[0], self._mem_access(address, locations[1:], width, idx+1))
+        location = BV(idx, width_idx)
+        return Ite(EqualsOrIff(address, location), locations[0], self._mem_access(address, locations[1:], width_mem, width_idx, idx+1))
     
     def Pointer(self, modulename, el, args):
         if type(args[0]) == tuple:
             width = get_type(args[1]).width
             mem_size = args[0][1]
             mem_locations = ["%s_%d"%(args[0][0], i) for i in range(mem_size[0], mem_size[1]+1)]
-            return self._mem_access(args[1], [self.varmap[v] for v in mem_locations], width)
+            return self._mem_access(args[1], [self.varmap[v] for v in mem_locations], width, width)
 
         if type(args[1]) == FNode:
-            width = get_type(args[1]).width
-            mem_locations = [BVExtract(args[0], i, i) for i in range(width)]
-            return self._mem_access(args[1], mem_locations, width)
+            width_mem = get_type(args[0]).width
+            width_idx = get_type(args[1]).width
+            print(args[1], width_mem, width_idx, self.paramdic, args[0], get_type(args[0]))
+            mem_locations = [BVExtract(args[0], i, i) for i in range(width_mem)]
+            return self._mem_access(args[1], mem_locations, width_mem, width_idx)
         
         return BVExtract(args[0], args[1], args[1])
 
     def Concat(self, modulename, el, args):
-        return args
+        return BVConcat(args[0], args[1])
 
     def _rec_repeat(self, el, count):
         if count == 1:
@@ -433,15 +443,29 @@ class VerilogSTSWalker(VerilogWalker):
         
         if len(paramargs) > 0:
             param_modulename = "%s__%s"%(param_modulename, "_".join(["%s%s"%(p[0], p[1]) for p in paramargs]))
-            
+
+        print(self.modulesdic)
+        if el.module not in self.modulesdic:
+            Logger.error("Module definition \"%s\" not found, line %d"%(el.module, el.lineno))
+
         if param_modulename not in self.subhtsdic:
             instancewalker = VerilogSTSWalker()
             instancewalker.paramdic = dict(paramargs)
+            instancewalker.modulesdic = self.modulesdic
             subhts = instancewalker.walk(self.modulesdic[el.module], param_modulename)
             self.subhtsdic[param_modulename] = subhts
 
         subhts = self.subhtsdic[param_modulename]
         subhts.name = param_modulename
+
+        formulaargs = [portargs.index(p) for p in portargs if not p[1].is_symbol()]
+        for idx in formulaargs:
+            newvar = Symbol("%s_%s_param%s"%(param_modulename, el.name, idx), get_type(portargs[idx]))
+            self.ts.invar = And(self.ts.invar, EqualsOrIff(newvar, portargs[idx]))
+            self.ts.add_var(newvar)
+            portargs[idx] = (portargs[idx][0], newvar)
+            
+        print(formulaargs, portargs)
         
         self.hts.add_sub(el.name, subhts, tuple([a[1].symbol_name() for a in portargs]))
         return args

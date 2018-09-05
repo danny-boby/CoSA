@@ -61,7 +61,7 @@ class VerilogWalker(object):
         return self.walk_module(ast, modulename)
     
     def walk_module(self, ast, modulename):
-        Logger.log("(%d) Parsing module \"%s\""%(ast.lineno, modulename), 2)
+        Logger.log("(%d) Parsing module \"%s\""%(ast.lineno, ast.name), 2)
         to_visit = [ast]
         visited = []
         args = None
@@ -100,7 +100,7 @@ class VerilogWalker(object):
             prevels.append(el)
             processed.append(nel)
 
-        Logger.log("(%d) Done parsing module \"%s\""%(ast.lineno, modulename), 2)
+        Logger.log("(%d) Done parsing module \"%s\""%(ast.lineno, ast.name), 2)
             
         return processed[0]
     
