@@ -139,13 +139,23 @@ class VerilogSTSWalker(VerilogWalker):
         return (el.name, args)
 
     def Port(self, modulename, el, args):
-        return (el.name, args)
+        return (None, [(el.name, None)])
 
     def Portlist(self, modulename, el, args):
         for port in args:
+            porttype = port[0]
             portname = port[1][0][0]
             portsize = port[1][0][1]
-            porttype = port[0]
+
+            if porttype == None:
+                if portsize is None:
+                    self.add_var(modulename, portname, (None, INPUT))
+                else:
+                    width = portsize[0]
+                    var = Symbol(self.varname(modulename, portname), BVType(width))
+                    self.add_var(modulename, portname, var)
+                    self.ts.add_input_var(var)
+                continue
             
             if type(porttype) == Output:
                 if portsize is None:
