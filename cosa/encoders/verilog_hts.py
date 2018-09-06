@@ -43,6 +43,9 @@ MAXINT = 64
 POSEDGE = "posedge"
 NEGEDGE = "negedge"
 
+INPUT = "input"
+OUTPUT = "output"
+
 class VerilogParser(ModelParser):
     parser = None
     extensions = ["v"]
@@ -99,6 +102,7 @@ class VerilogSTSWalker(VerilogWalker):
         self.hts = HTS(modulename)
         self.ts = TS()
         self.subhtsdic = {}
+        self.paramlist = None
         if self.varmap is None: self.varmap = {}
         if self.paramdic is None: self.paramdic = {}
         if self.modulesdic is None: self.modulesdic = {} 
@@ -115,23 +119,75 @@ class VerilogSTSWalker(VerilogWalker):
     def Paramlist(self, modulename, el, args):
         return el
 
+    def Wire(self, modulename, el, args):
+        width = args[0] if args is not None else 1
+        self.add_var(modulename, el.name, Symbol(self.varname(modulename, el.name), BVType(width)))
+        return (el.name, args)
+
+    def Reg(self, modulename, el, args):
+        width = args[0] if args is not None else 1
+        self.add_var(modulename, el.name, Symbol(self.varname(modulename, el.name), BVType(width)))
+        return (el.name, args)
+    
+    def Ioport(self, modulename, el, args):
+        return (el.first, args)
+
+    def Input(self, modulename, el, args):
+        return (el.name, args)
+    
+    def Output(self, modulename, el, args):
+        return (el.name, args)
+
     def Port(self, modulename, el, args):
-        if el.width is None:
-            self.add_var(modulename, el.name, (el.width, el.type))
-            #self.varmap[el.name] = (el.width, el.type)
-        return el
+        return (el.name, args)
 
     def Portlist(self, modulename, el, args):
-        paramlist = [(v.symbol_name(), v) for v in args]
-        paramlist.sort()
-        for param in paramlist:
-            self.hts.add_param(param[1])
-        
+        for port in args:
+            portname = port[1][0][0]
+            portsize = port[1][0][1]
+            porttype = port[0]
+            
+            if type(porttype) == Output:
+                if portsize is None:
+                    self.add_var(modulename, portname, (None, OUTPUT))
+                else:
+                    width = portsize[0]
+                    var = Symbol(self.varname(modulename, portname), BVType(width))
+                    self.add_var(modulename, portname, var)
+                    self.ts.add_output_var(var)
+                continue
+
+            if type(porttype) == Input:
+                if portsize is None:
+                    self.add_var(modulename, portname, (None, INPUT))
+                else:
+                    width = portsize[0]
+                    var = Symbol(self.varname(modulename, portname), BVType(width))
+                    self.add_var(modulename, portname, var)
+                    self.ts.add_input_var(var)
+                continue
+                    
+            assert False
+
+        self.paramlist = [p[1][0][0] for p in args]
+
         return args
 
     def add_var(self, modulename, varname, value):
         self.varmap[varname] = value
-    
+
+    def get_var(self, modulename, varname, size=1):
+        if type(self.varmap[varname]) == tuple:
+            var = Symbol(self.varname(modulename,varname), BVType(size))
+            if self.varmap[varname][1] == INPUT:
+                self.ts.add_input_var(var)
+            if self.varmap[varname][1] == OUTPUT:
+                self.ts.add_output_var(var)
+            self.varmap[varname] = var
+            return var
+        else:
+            return self.varmap[varname]
+        
     def Decl(self, modulename, el, args):
         if args[0] == None:
             return args
@@ -142,16 +198,12 @@ class VerilogSTSWalker(VerilogWalker):
             width = args[0][1]
             typ = el.children()[0]
 
-            # Setting variable width according with previous values
             if width is None:
-                if (typ.name in self.varmap):
-                    var_inmap = self.varmap[typ.name]
-                    if type(var_inmap) == tuple:
-                        width = var_inmap[0]
-                    else:
-                        width = var_inmap.symbol_type().width
+                var_inmap = self.varmap[typ.name]
+                if type(var_inmap) == tuple:
+                    width = 1 if var_inmap[0] is None else var_inmap[0]
                 else:
-                    width = 1
+                    width = var_inmap.symbol_type().width
             else:
                 width = width[0]
             
@@ -182,9 +234,11 @@ class VerilogSTSWalker(VerilogWalker):
                 vname_idx = "%s_%d"%(vname, i)
                 var_idx = Symbol(self.varname(modulename, vname_idx), BVType(width))
                 var_idxs.append(var_idx)
-                self.add_var(modulename, vname, (vname, (low, high)))
                 self.add_var(modulename, vname_idx, var_idx)
                 self.ts.add_state_var(var_idx)
+
+            self.add_var(modulename, vname, var_idxs)
+                
             return var_idxs
         
         Logger.error("Unmanaged type %s, line %d"%(type(direction), el.lineno))
@@ -193,7 +247,7 @@ class VerilogSTSWalker(VerilogWalker):
         if el.sig is None:
             return TRUE()
             
-        var = self.varmap[el.sig.name]
+        var = self.get_var(modulename, el.sig.name)
 
         zero = BV(0, var.symbol_type().width)
         one = BV(1, var.symbol_type().width)
@@ -264,25 +318,14 @@ class VerilogSTSWalker(VerilogWalker):
     def Identifier(self, modulename, el, args):
         if el.name in self.paramdic:
             return self.paramdic[el.name]
+
         if el.name in self.varmap:
-            return self.varmap[el.name]
+            return self.get_var(modulename, el.name)
 
         return el.name
     
     def Width(self, modulename, el, args):
         return (args[0] - args[1])+1
-
-    def Input(self, modulename, el, args):
-        return (el.name, args)
-    
-    def Output(self, modulename, el, args):
-        return (el.name, args)
-
-    def Wire(self, modulename, el, args):
-        return (el.name, args)
-
-    def Reg(self, modulename, el, args):
-        return (el.name, args)
     
     def Block(self, modulename, el, args):
         return And(args)
@@ -361,6 +404,11 @@ class VerilogSTSWalker(VerilogWalker):
         always = And([args[i] for i in always_ids])
         self.ts.trans = always
         self.hts.add_ts(self.ts)
+
+        self.paramlist.sort()
+        for param in self.paramlist:
+            self.hts.add_param(self.get_var(modulename, param))
+
         return self.hts
 
     def Description(self, modulename, el, args):
@@ -436,9 +484,6 @@ class VerilogSTSWalker(VerilogWalker):
 
         Logger.error("Unimplemented system call \"%s\", line %d"%(el.syscall, el.lineno))
         
-    def Ioport(self, modulename, el, args):
-        return self.Decl(modulename, el, args)
-
     def Partselect(self, modulename, el, args):
         return BVExtract(args[0], args[2], args[1])
 
@@ -460,10 +505,17 @@ class VerilogSTSWalker(VerilogWalker):
             mem_locations = ["%s_%d"%(args[0][0], i) for i in range(mem_size[0], mem_size[1]+1)]
             return self._mem_access(args[1], [self.varmap[v] for v in mem_locations], width, width)
 
-        if type(args[1]) == FNode:
+        if (type(args[0]) == FNode) and (type(args[1]) == FNode):
             width_mem = get_type(args[0]).width
             width_idx = get_type(args[1]).width
             mem_locations = [BVExtract(args[0], i, i) for i in range(width_mem)]
+            return self._mem_access(args[1], mem_locations, width_mem, width_idx)
+
+        # Management of memory access
+        if (type(args[0]) == list) and (type(args[1]) == FNode):
+            width_mem = len(args[0])
+            width_idx = get_type(args[1]).width
+            mem_locations = args[0]
             return self._mem_access(args[1], mem_locations, width_mem, width_idx)
         
         return BVExtract(args[0], args[1], args[1])
