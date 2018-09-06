@@ -39,8 +39,8 @@ class VerilogWalker(object):
             Logger.error("Pyverilog is not available")
         Logger.log("(%d) Processing Node: %s ---> %s"%(el.lineno, \
                                                        class_name(el), \
-                                                       None if el.children() is None else [class_name(c) for c in el.children()]), 2)
-        Logger.log("(%d) Args: %s"%(el.lineno, str(args)), 2)
+                                                       None if el.children() is None else [class_name(c) for c in el.children()]), 3)
+        Logger.log("(%d) Args: %s"%(el.lineno, str(args)), 3)
         self.__init_methods()
         
         classname = class_name(el)
@@ -76,7 +76,7 @@ class VerilogWalker(object):
             if isinstance(el, Node) and len(list(el.children())) > 0:
                 Logger.log("(%d) Collecting Node: %s ---> %s"%(el.lineno, \
                                                                class_name(el), \
-                                                               None if el.children() is None else [class_name(c) for c in el.children()]), 2)
+                                                               None if el.children() is None else [class_name(c) for c in el.children()]), 3)
                 child = list(el.children())
                 to_visit = to_visit[:i] + child + to_visit[i:]
 

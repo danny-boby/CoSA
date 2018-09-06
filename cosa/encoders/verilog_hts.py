@@ -466,33 +466,15 @@ class VerilogSTSWalker(VerilogWalker):
         if el.module not in self.modulesdic:
             Logger.error("Module definition \"%s\" not found, line %d"%(el.module, el.lineno))
 
-        prev_varmap = self.varmap
-
         if param_modulename not in self.subhtsdic:
             instancewalker = VerilogSTSWalker()
             instancewalker.paramdic = dict(paramargs)
             instancewalker.modulesdic = self.modulesdic
             subhts = instancewalker.walk_module(self.modulesdic[el.module], param_modulename)
             self.subhtsdic[param_modulename] = subhts
-
-        self.varmap = prev_varmap
             
         subhts = self.subhtsdic[param_modulename]
         subhts.name = param_modulename
-
-        # formulaargs = [portargs.index(p) for p in portargs if not p[1].is_symbol()]
-        # for idx in formulaargs:
-        #     newvarname = "%s_%s_param%s"%(param_modulename, el.name, idx)
-        #     if modulename != "":
-        #         print(modulename)
-        #         newvarname = "%s.%s"%(modulename, newvarname)
-        #     newvar = Symbol(newvarname, get_type(portargs[idx][1]))
-        #     print(newvar, portargs[idx][1])
-        #     print(get_type(newvar), get_type(portargs[idx][1]))
-        #     self.ts.invar = And(self.ts.invar, EqualsOrIff(newvar, portargs[idx][1]))
-        #     self.hts.add_var(newvar)
-        #     portargs[idx] = (portargs[idx][0], newvar)
-        #     print(portargs[idx])
             
         self.hts.add_sub(el.name, subhts, tuple([a[1] for a in portargs]))
         return args

@@ -384,7 +384,7 @@ class SymbolicTSParser(ModelParser):
 
         for var in outputs:
             ts.add_output_var(self._define_var(var, module.name))
-            
+        
         self._check_parameters(module, modulesdic, ts.vars)
 
         for par in module.pars:

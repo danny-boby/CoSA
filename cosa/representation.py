@@ -74,6 +74,10 @@ class HTS(object):
         self.output_vars.add(var)
         self.vars.add(var)
 
+    def add_state_var(self, var):
+        self.state_vars.add(var)
+        self.vars.add(var)
+        
     def add_var(self, var):
         self.vars.add(var)
         
@@ -197,20 +201,27 @@ class HTS(object):
     
     def flatten(self, path=[]):
         vardic = dict([(v.symbol_name(), v) for v in self.vars])
+
+        def full_path(name, path):
+            ret = ".".join(path+[name])
+            if ret[0] == ".":
+                return ret[1:]
+            return ret
+        
         for sub in self.subs:
             instance, actual, module = sub
             formal = module.params
 
             ts = TS("FLATTEN")
-            (ts.init, ts.trans, ts.invar) = module.flatten(path+[instance])
+            (sub_vars, sub_state_vars, ts.init, ts.trans, ts.invar) = module.flatten(path+[instance])
             self.add_ts(ts)
-
-            def full_path(name, path):
-                ret = ".".join(path+[name])
-                if ret[0] == ".":
-                    return ret[1:]
-                return ret
             
+            for var in sub_vars:
+                self.add_var(var)
+
+            for var in sub_state_vars:
+                self.add_state_var(var)
+                
             links = TRUE()
             for i in range(len(actual)):
                 if type(actual[i]) == str:
@@ -246,8 +257,16 @@ class HTS(object):
         s_init = substitute(s_init, replace_dic)
         s_invar = substitute(s_invar, replace_dic)
         s_trans = substitute(s_trans, replace_dic)
-        
-        return (s_init, s_trans, s_invar)
+
+        local_vars = []
+        local_state_vars = []
+        for var in self.vars:
+            local_vars.append(Symbol(replace_dic[var.symbol_name()], var.symbol_type()))
+
+        for var in self.state_vars:
+            local_state_vars.append(Symbol(replace_dic[var.symbol_name()], var.symbol_type()))
+            
+        return (local_vars, local_state_vars, s_init, s_trans, s_invar)
                 
     def __copy__(self):
         cls = self.__class__
