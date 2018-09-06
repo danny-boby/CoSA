@@ -23,6 +23,8 @@ from cosa.utils.logger import Logger
 class VerilogWalker(object):
     methods = None
     modulesdic = None
+
+    preserve_main_name = False
     
     def __init__(self):
         pass
@@ -58,7 +60,9 @@ class VerilogWalker(object):
         for m in modules:
             if type(m) == ModuleDef:
                 self.modulesdic[m.name] = m
-        return self.walk_module(self.modulesdic[modulename], modulename)
+        
+        return self.walk_module(self.modulesdic[modulename], \
+                                modulename if self.preserve_main_name else "")
     
     def walk_module(self, ast, modulename):
         Logger.log("(%d) Parsing module \"%s\""%(ast.lineno, ast.name), 2)
