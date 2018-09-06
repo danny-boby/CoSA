@@ -97,8 +97,8 @@ class VerilogSTSWalker(VerilogWalker):
     def reset_structures(self, modulename=""):
         self.hts = HTS(modulename)
         self.ts = TS()
-        self.varmap = {}
         self.subhtsdic = {}
+        if self.varmap is None: self.varmap = {}
         if self.paramdic is None: self.paramdic = {}
         if self.modulesdic is None: self.modulesdic = {} 
         
@@ -141,15 +141,28 @@ class VerilogSTSWalker(VerilogWalker):
             width = args[0][1]
             typ = el.children()[0]
 
-            width = 1 if width is None else width[0]            
+            # width = 1 if width is None else width[0]            
             # if (typ.name in self.varmap) and (width is None):
             #     width = self.varmap[typ.name].symbol_type().width
             # else:
             #     width = 1 if width is None else width[0]
-                
+
+            if width is None:
+                if (typ.name in self.varmap):
+                    var_inmap = self.varmap[typ.name]
+                    if type(var_inmap) == tuple:
+                        width = var_inmap[0]
+                    else:
+                        width = var_inmap.symbol_type().width
+                else:
+                    width = 1
+            else:
+                width = width[0]
+            
             if typ.name in self.varmap:
                 prev_width = self.varmap[typ.name][0] if type(self.varmap[typ.name]) is not FNode else self.varmap[typ.name].symbol_type().width
                 if (prev_width is not None) and (prev_width != width):
+                    print(prev_width, width)
                     Logger.error("Unmatched variable size at line %d"%el.lineno)
 
             var = Symbol(self.varname(modulename, typ.name), BVType(width))
@@ -211,6 +224,8 @@ class VerilogSTSWalker(VerilogWalker):
         if type(value) == int:
             value = BV(value, get_type(args[0]).width)
 
+        # print(self.paramdic)
+        # print(get_type(args[0]), get_type(value))
         return EqualsOrIff(TS.to_next(args[0]), value)
 
     def BlockingSubstitution(self, modulename, el, args):
@@ -461,22 +476,55 @@ class VerilogSTSWalker(VerilogWalker):
         paramargs.sort()
         width = args[width_idx[0]] if len(width_idx) > 0 else None
 
-        param_modulename = el.module
-
         if el.module not in self.modulesdic:
             Logger.error("Module definition \"%s\" not found, line %d"%(el.module, el.lineno))
+        
+        param_modulename = el.module
 
-        if param_modulename not in self.subhtsdic:
-            instancewalker = VerilogSTSWalker()
-            instancewalker.paramdic = dict(paramargs)
-            instancewalker.modulesdic = self.modulesdic
-            subhts = instancewalker.walk_module(self.modulesdic[el.module], param_modulename)
-            self.subhtsdic[param_modulename] = subhts
+        include_varargs = False
+        varmap = {}
+        
+        parameterized_type = ["%s%s"%(p[0], p[1]) for p in paramargs]
+
+        if include_varargs:
+            parameterized_type += ["%s%s"%(p[0], get_type(p[1]).width) for p in portargs]
+            for portarg in portargs:
+                varmap[portarg[0]] = (get_type(portarg[1]).width, None)
+
+        if len(parameterized_type) > 0:
+            param_modulename = "%s__|%s|"%(param_modulename, ",".join(parameterized_type))
+
+        instances = []
+
+        # Management of multi instances
+        if len(width_idx) > 0:
+            formal_args = [p[0] for p in portargs]
+            args_width_idx = [formal_args.index(c.portname) for c in el_child if type(c.children()[0]) == Partselect]
+            map_ports = dict([(dict(portargs)[c.portname], dict(portargs)[c.portname].args()[0]) for c in el_child if type(c.children()[0]) == Partselect])
+            remap_ports = [(p[0], map_ports[p[1]] if p[1] in map_ports else p[1]) for p in portargs]
+
+            extract_port = lambda p,i: BVExtract(p, i, i)
             
-        subhts = self.subhtsdic[param_modulename]
-        subhts.name = param_modulename
+            for i in range(args[width_idx[0]]):
+                idx_params = [(p[0], extract_port(p[1], i) if remap_ports.index(p) in args_width_idx else p[1]) for p in remap_ports]
+                idx_instance_name = "%s_%d"%(el.name, i)
+                instances.append((idx_instance_name, idx_params))
+        else:        
+            instances = [(el.name, portargs)]
             
-        self.hts.add_sub(el.name, subhts, tuple([a[1] for a in portargs]))
+        for (instance, actualargs) in instances:
+            if param_modulename not in self.subhtsdic:
+                instancewalker = VerilogSTSWalker()
+                instancewalker.paramdic = dict(paramargs)
+                instancewalker.varmap = varmap
+                instancewalker.modulesdic = self.modulesdic
+                subhts = instancewalker.walk_module(self.modulesdic[el.module], param_modulename)
+                self.subhtsdic[param_modulename] = subhts
+
+            subhts = self.subhtsdic[param_modulename]
+            subhts.name = param_modulename
+
+            self.hts.add_sub(instance, subhts, tuple([a[1] for a in actualargs]))
         return args
 
     def InstanceList(self, modulename, el, args):
