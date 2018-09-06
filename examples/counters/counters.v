@@ -11,12 +11,14 @@ module Counters #(parameter SIZE = 10) (input clk, output [SIZE-1:0] q);
 	             .val (val2));
 
    assign q = val1 + val2;
-   
+
      
 endmodule
 
 module Counter #(parameter SIZE = 16) (input clk, output [SIZE-1:0] val);
 
+   initial val = 'b0;
+   
    always @(posedge clk) begin
        val <= val + 1;
    end

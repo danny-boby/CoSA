@@ -24,6 +24,7 @@ from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type, get_mod
 from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT, BVXor, BVOr
 from pysmt.fnode import FNode
 from pysmt.typing import BOOL, BVType, ArrayType, INT
+from pysmt.rewritings import conjunctive_partition
 
 from cosa.utils.logger import Logger
 from cosa.encoders.template import ModelParser
@@ -141,12 +142,7 @@ class VerilogSTSWalker(VerilogWalker):
             width = args[0][1]
             typ = el.children()[0]
 
-            # width = 1 if width is None else width[0]            
-            # if (typ.name in self.varmap) and (width is None):
-            #     width = self.varmap[typ.name].symbol_type().width
-            # else:
-            #     width = 1 if width is None else width[0]
-
+            # Setting variable width according with previous values
             if width is None:
                 if (typ.name in self.varmap):
                     var_inmap = self.varmap[typ.name]
@@ -162,7 +158,6 @@ class VerilogSTSWalker(VerilogWalker):
             if typ.name in self.varmap:
                 prev_width = self.varmap[typ.name][0] if type(self.varmap[typ.name]) is not FNode else self.varmap[typ.name].symbol_type().width
                 if (prev_width is not None) and (prev_width != width):
-                    print(prev_width, width)
                     Logger.error("Unmatched variable size at line %d"%el.lineno)
 
             var = Symbol(self.varname(modulename, typ.name), BVType(width))
@@ -187,14 +182,12 @@ class VerilogSTSWalker(VerilogWalker):
                 vname_idx = "%s_%d"%(vname, i)
                 var_idx = Symbol(self.varname(modulename, vname_idx), BVType(width))
                 var_idxs.append(var_idx)
-                #self.varmap[vname] = (vname, (low, high))
                 self.add_var(modulename, vname, (vname, (low, high)))
-                #self.varmap[vname_idx] = var_idx
                 self.add_var(modulename, vname_idx, var_idx)
                 self.ts.add_state_var(var_idx)
             return var_idxs
         
-        Logger.error("Unmanaged type %s"%type(direction))
+        Logger.error("Unmanaged type %s, line %d"%(type(direction), el.lineno))
         
     def Sens(self, modulename, el, args):
         if el.sig is None:
@@ -224,24 +217,32 @@ class VerilogSTSWalker(VerilogWalker):
         if type(value) == int:
             value = BV(value, get_type(args[0]).width)
 
-        # print(self.paramdic)
-        # print(get_type(args[0]), get_type(value))
         return EqualsOrIff(TS.to_next(args[0]), value)
 
     def BlockingSubstitution(self, modulename, el, args):
         left, right = args[0], args[1]
+        
+        if (type(left) == int) and (type(right) == FNode):
+            left = BV(left, get_type(right).width)
+
+        if (type(right) == int) and (type(left) == FNode):
+            right = BV(right, get_type(left).width)
+            
         if type(left) == int:
             left = BV(left, MAXINT)
         if type(right) == int:
             right = BV(right, MAXINT)
-        return EqualsOrIff(TS.to_next(left), right)
+
+        fv_left = get_free_variables(left)
+        fv_right = get_free_variables(right)
+
+        return EqualsOrIff(left, right)
 
     def SensList(self, modulename, el, args):
         return And(args)
 
     def Integer(self, modulename, el, args):
         intvar = Symbol(self.varname(modulename, el.name), BVType(MAXINT))
-        #self.varmap[el.name] = intvar
         self.add_var(modulename, el.name, intvar)
         return None
     
@@ -288,10 +289,8 @@ class VerilogSTSWalker(VerilogWalker):
 
     def IfStatement(self, modulename, el, args):
         if type(args[1]) == list:
-            # statements
-            pass
+            Logger.error("Not Implemented")
         else:
-
             if type(args[0]) == int:
                 condition = TRUE() if args[0] == 1 else FALSE()
             elif get_type(args[0]) == BOOL:
@@ -305,15 +304,34 @@ class VerilogSTSWalker(VerilogWalker):
             else:
                 return Ite(condition, args[1], args[2])
 
+    def Initial(self, modulename, el, args):
+        self.ts.init = And(self.ts.init, And(args))
+        return args
+            
     def Always(self, modulename, el, args):
         fv = [v for v in get_free_variables(args[1]) if not TS.is_prime(v)]
         frame_cond = And([EqualsOrIff(v, TS.get_prime(v)) for v in fv])
-        active = Implies(args[0], args[1])
-        passive = Implies(Not(args[0]), frame_cond)
-        
+        active = args[1] if args[0] == TRUE() else Implies(args[0], args[1])
+        passive = TRUE() if args[0] == TRUE() else Implies(Not(args[0]), frame_cond)
         return And(active, passive)
 
     def ForStatement(self, modulename, el, args):
+
+        # Refining definition in primed format e.g., for(i=0;i<10;i=i+1) into for(i'=0;i<10;i'=i+1)
+        args[0] = args[0].substitute(dict([(v, TS.get_prime(v)) for v in get_free_variables(args[0])]))
+        cp = list(conjunctive_partition(args[2]))
+        newcp = []
+        for ass in cp:
+            left, right = ass.args()[0], ass.args()[1]
+            assert (ass.is_equals() or ass.is_iff()) and (left.is_symbol() or right.is_symbol())
+            if left.is_symbol():
+                newcp.append(EqualsOrIff(TS.get_prime(left), right))
+            if right.is_symbol():
+                newcp.append(EqualsOrIff(TS.get_prime(right), left))
+
+        args[2] = And(newcp)
+
+        # Performining the For-loop unrolling
         fv = get_free_variables(args[0])
         model = get_model(args[0])
         state_n = [(v, model[v]) for v in fv]
@@ -416,6 +434,8 @@ class VerilogSTSWalker(VerilogWalker):
         if el.syscall == "clog2":
             return math.ceil(math.log(args[0])/math.log(2))
 
+        Logger.error("Unimplemented system call \"%s\", line %d"%(el.syscall, el.lineno))
+        
     def Ioport(self, modulename, el, args):
         return self.Decl(modulename, el, args)
 
