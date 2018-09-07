@@ -248,6 +248,8 @@ class VerilogSTSWalker(VerilogWalker):
             typ = el.children()[0]
 
             if width is None:
+                if typ.name not in self.varmap:
+                    Logger.error("Variable \"%s\" not defined, line %d"%(typ.name, el.lineno))
                 var_inmap = self.varmap[typ.name]
                 if type(var_inmap) == tuple:
                     width = 1 if var_inmap[0] is None else var_inmap[0]
@@ -321,13 +323,14 @@ class VerilogSTSWalker(VerilogWalker):
         return args[0]
 
     def NonblockingSubstitution(self, modulename, el, args):
-        value = args[1]
-        if type(value) == int:
-            value = BV(value, get_type(args[0]).width)
+        left, right = args[0], args[1]
 
-        primedic = dict([(v.symbol_name(), TS.get_prime(v).symbol_name()) for v in get_free_variables(args[0]) \
+        if type(right) == int:
+            right = BV(right, get_type(left).width)
+
+        primedic = dict([(v.symbol_name(), TS.get_prime(v).symbol_name()) for v in get_free_variables(left) \
                          if v not in self.ts.input_vars])
-        return EqualsOrIff(substitute(args[0], primedic), value)
+        return EqualsOrIff(substitute(left, primedic), right)
 
     def BlockingSubstitution(self, modulename, el, args):
         left, right = args[0], args[1]

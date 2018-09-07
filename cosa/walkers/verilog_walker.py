@@ -60,7 +60,8 @@ class VerilogWalker(object):
         for m in modules:
             if type(m) == ModuleDef:
                 self.modulesdic[m.name] = m
-        
+        if modulename not in self.modulesdic:
+            Logger.error("Undefined module \"%s\""%(modulename))
         return self.walk_module(self.modulesdic[modulename], \
                                 modulename if self.preserve_main_name else "")
     
