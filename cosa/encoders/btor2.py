@@ -278,7 +278,8 @@ class BTOR2Parser(ModelParser):
             name = lambda x: str(nodemap[x]) if nodemap[x].is_symbol() else x
             uncovered = [name(x) for x in nodemap if x not in node_covered]
             uncovered.sort()
-            Logger.warning("Unlinked nodes \"%s\""%",".join(uncovered))
+            if len(uncovered) > 0:
+                Logger.warning("Unlinked nodes \"%s\""%",".join(uncovered))
         
         init = And(initlist)
         trans = And(translist)

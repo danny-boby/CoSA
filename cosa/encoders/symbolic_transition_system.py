@@ -123,7 +123,7 @@ class SymbolicTSParser(ModelParser):
     
     def __init__(self):
         self.parser = self.__init_parser()
-        self.parser.ignore("#" + SkipTo(lineEnd))
+        self.parser.ignore(T_COM + SkipTo(lineEnd))
 
     def parse_file(self, strfile, flags=None):
         with open(strfile, "r") as f:
@@ -509,9 +509,9 @@ class SymbolicSimpleTSParser(ModelParser):
         for line in lines:
             count += 1
 
-            if line.strip() in ["","\n"]:
+            if (line.strip() in ["","\n"]) or line[0] == T_COM:
                 continue
-            
+
             if T_VAR == line[:len(T_VAR)]:
                 section = var
                 continue

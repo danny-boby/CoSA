@@ -31,7 +31,7 @@ from cosa.encoders.template import ModelParser
 from cosa.walkers.verilog_walker import VerilogWalker
 from cosa.representation import HTS, TS
 from cosa.utils.generic import bin_to_dec, dec_to_bin
-from cosa.utils.formula_mngm import B2BV, BV2B, get_free_variables
+from cosa.utils.formula_mngm import B2BV, BV2B, get_free_variables, substitute
 
 KEYWORDS = ""
 KEYWORDS += "module wire assign else reg always endmodule end define integer generate "
@@ -138,7 +138,7 @@ class VerilogSTSWalker(VerilogWalker):
         self.hts = HTS(modulename)
         self.ts = TS()
         self.subhtsdic = {}
-        self.paramlist = None
+        self.portslist = None
         if self.varmap is None: self.varmap = {}
         if self.paramdic is None: self.paramdic = {}
         if self.modulesdic is None: self.modulesdic = {} 
@@ -218,7 +218,7 @@ class VerilogSTSWalker(VerilogWalker):
                     
             assert False
 
-        self.paramlist = [p[1][0][0] for p in args]
+        self.portslist = [p[1][0][0] for p in args]
 
         return args
 
@@ -325,7 +325,9 @@ class VerilogSTSWalker(VerilogWalker):
         if type(value) == int:
             value = BV(value, get_type(args[0]).width)
 
-        return EqualsOrIff(TS.to_next(args[0]), value)
+        primedic = dict([(v.symbol_name(), TS.get_prime(v).symbol_name()) for v in get_free_variables(args[0]) \
+                         if v not in self.ts.input_vars])
+        return EqualsOrIff(substitute(args[0], primedic), value)
 
     def BlockingSubstitution(self, modulename, el, args):
         left, right = args[0], args[1]
@@ -467,10 +469,12 @@ class VerilogSTSWalker(VerilogWalker):
         self.ts.trans = always
         self.hts.add_ts(self.ts)
 
-        self.paramlist.sort()
-        for param in self.paramlist:
+        self.portslist.sort()
+        for param in self.portslist:
             self.hts.add_param(self.get_var(modulename, param))
 
+        Logger.log("Ports module \"%s\": %s"%(el.name, ", ".join(["%s:%s"%(p, get_type(self.get_var(modulename, p))) for p in self.portslist])), 2)
+        Logger.log("Parameters module \"%s\": %s"%(el.name, ", ".join(["%s=%s"%(p, self.paramdic[p]) for p in self.paramdic])), 2)
         return self.hts
 
     def Description(self, modulename, el, args):

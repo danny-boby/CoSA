@@ -46,7 +46,7 @@ def HRParser(env=None):
 class StringParser(object):
 
     def __init__(self):
-        pass
+        SyntacticSugarFactory.init_sugar()
     
     def parse_string(self, string):
         return HRParser().parse(string)
