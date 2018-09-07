@@ -287,7 +287,8 @@ class ProblemSolver(object):
             problem.run_coreir_passes = problems.run_coreir_passes
             problem.relative_path = problems.relative_path
 
-            problem.trace_prefix = "".join([problem.relative_path,problem.trace_prefix])
+            if problem.trace_prefix is not None:
+                problem.trace_prefix = "".join([problem.relative_path,problem.trace_prefix])
 
             if config.time or problems.time:
                 timer_solve = Logger.start_timer("Problem %s"%problem.name, False)
