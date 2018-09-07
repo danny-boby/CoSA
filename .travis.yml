@@ -36,9 +36,10 @@ addons:
      - lbzip2
      - libncurses5-dev
      - python3-nose
+     - iverilog
 
 install:
-  - pip install six pyparsing bit_vector
+  - pip install six pyparsing bit_vector pyverilog
   - bash scripts/travis_install.sh
 
 env:
