@@ -22,7 +22,7 @@ NL = "\n"
 VCD_SEP = "-"
 
 # Variables starting with HIDDEN are not printed
-HIDDEN = "_-_"
+HIDDEN = "H__"
 
 class TracePrinter(object):
 

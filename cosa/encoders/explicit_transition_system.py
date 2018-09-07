@@ -84,7 +84,7 @@ class ExplicitTSParser(ModelParser):
 
     def new_state_id(self):
         ExplicitTSParser.state_id += 1
-        return HIDDEN+STATE_ID+str(ExplicitTSParser.state_id)+HIDDEN
+        return HIDDEN+STATE_ID+str(ExplicitTSParser.state_id)+(HIDDEN[::-1])
 
     def __init_parser(self):
 
@@ -145,20 +145,21 @@ class ExplicitTSParser(ModelParser):
                 states[T_I] = And(states[T_I], EqualsOrIff(ivar, value))
                 init = And(init, EqualsOrIff(ivar, value))
                 
+            state = TRUE()
             if line.state:
-                state = TRUE()
                 sname = T_S + line.state.id
-                if line.state.value != T_TRUE:
+                if (line.state.varname != ""):
                     (value, typev) = self.__get_value(line.state.value)
                     ivar = def_var(line.state.varname, typev)
                     state = EqualsOrIff(ivar, value)
-
                     assval = (sname, line.state.varname)
                     if assval not in assigns:
                         assigns.add(assval)
                     else:
                         Logger.error("Double assignment for variable \"%s\" at state \"%s\""%(line.state.varname, sname))
-                    
+                else:
+                    state = TRUE() if line.state.value == T_TRUE else FALSE()
+                        
                 if sname not in states:
                     states[sname] = TRUE()
 

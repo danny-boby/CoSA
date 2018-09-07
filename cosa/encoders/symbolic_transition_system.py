@@ -478,13 +478,12 @@ class SymbolicSimpleTSParser(ModelParser):
             return self.parse_string(f.readlines())
 
     def _define_var(self, varname, vartype):
-        vartype, size = vartype[0], vartype[1]
-        
-        if vartype == T_BV:
-            return Symbol(varname, BVType(int(size)))
-
         if vartype == T_BOOL:
             return Symbol(varname, BOOL)
+
+        if vartype[0] == T_BV:
+            vartype, size = vartype[0], vartype[1]
+            return Symbol(varname, BVType(int(size)))
         
         Logger.error("Unsupported type: %s"%vartype)
         
@@ -543,7 +542,7 @@ class SymbolicSimpleTSParser(ModelParser):
             
             if section in [var, state, input, output]:
                 line = line[:-2].replace(" ","").split(":")
-                varname, vartype = line[0], (line[1][:-1].split("("))
+                varname, vartype = line[0], (line[1][:-1].split("(")) if "(" in line[1] else line[1]
                 if varname[0] == "'":
                     varname = varname[1:-1]
                 vardef = self._define_var(varname, vartype)
