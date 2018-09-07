@@ -280,8 +280,9 @@ class VerilogSTSWalker(VerilogWalker):
             width = args[0][0]
             vname = el.children()[0].name
             var_idxs = []
+            just = len(str(high))
             for i in range(low, high+1, 1):
-                vname_idx = "%s_%d"%(vname, i)
+                vname_idx = "%s_%s"%(vname, str(i).rjust(just,"0"))
                 var_idx = Symbol(self.varname(modulename, vname_idx), BVType(width))
                 var_idxs.append(var_idx)
                 self.add_var(modulename, vname_idx, var_idx)
