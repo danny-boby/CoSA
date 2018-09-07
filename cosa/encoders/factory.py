@@ -52,7 +52,7 @@ class ModelParsersFactory(object):
         from cosa.encoders.btor2 import BTOR2Parser
         from cosa.encoders.coreir import CoreIRParser
         from cosa.encoders.verilog_yosys import VerilogYosysParser
-        from cosa.encoders.verilog_hts import VerilogParser
+        from cosa.encoders.verilog_hts import VerilogHTSParser
         
         ModelParsersFactory.register_parser(CoreIRParser())
         ModelParsersFactory.register_parser(SymbolicTSParser())
@@ -60,7 +60,7 @@ class ModelParsersFactory(object):
         ModelParsersFactory.register_parser(ExplicitTSParser())
         ModelParsersFactory.register_parser(BTOR2Parser())
         # ModelParsersFactory.register_parser(VerilogYosysParser())
-        ModelParsersFactory.register_parser(VerilogParser())
+        ModelParsersFactory.register_parser(VerilogHTSParser())
         
     @staticmethod
     def register_parser(parser):

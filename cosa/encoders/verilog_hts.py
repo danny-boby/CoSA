@@ -15,7 +15,7 @@ import math
 VPARSER = True
 
 try:
-    from pyverilog.vparser.parser import parse
+    from pyverilog.vparser.parser import VerilogParser, VerilogPreprocessor
     from pyverilog.vparser.ast import *
 except:
     VPARSER = False
@@ -47,7 +47,7 @@ LEVEL = "level"
 INPUT = "input"
 OUTPUT = "output"
 
-class VerilogParser(ModelParser):
+class VerilogHTSParser(ModelParser):
     parser = None
     extensions = ["v"]
     name = "Verilog"
@@ -68,7 +68,7 @@ class VerilogParser(ModelParser):
             Logger.error("Module name not provided")
         
         absstrfile = os.path.abspath(strfile)
-        ast, directives = parse([absstrfile])
+        ast = self.parse([absstrfile])
         hts = self.walker.walk(ast, flags[0])
         hts.flatten()
         return (hts, invar_props, ltl_props)
@@ -76,9 +76,16 @@ class VerilogParser(ModelParser):
     def get_extensions(self):
         return self.extensions
 
+    def parse(self, filelist, preprocess_include=None, preprocess_define=None):
+        codeparser = VerilogCodeParser(filelist,
+                                       preprocess_include=preprocess_include,
+                                       preprocess_define=preprocess_define)
+        ast = codeparser.parse()
+        return ast
+    
     @staticmethod        
     def get_extensions():
-        return VerilogParser.extensions
+        return VerilogHTSParser.extensions
 
     def remap_an2or(self, name):
         return name
@@ -86,6 +93,34 @@ class VerilogParser(ModelParser):
     def remap_or2an(self, name):
         return name
 
+class VerilogCodeParser(object):
+
+    def __init__(self, filelist, preprocess_output='preprocess.output',
+                 preprocess_include=None,
+                 preprocess_define=None):
+        self.preprocess_output = preprocess_output
+        self.directives = ()
+        self.preprocessor = VerilogPreprocessor(filelist, preprocess_output,
+                                                preprocess_include,
+                                                preprocess_define)
+        self.parser = VerilogParser()
+
+    def preprocess(self):
+        self.preprocessor.preprocess()
+        with open(self.preprocess_output) as f:
+            text = f.read()
+        os.remove(self.preprocess_output)
+        return text
+
+    def parse(self, preprocess_output='preprocess.output', debug=0):
+        text = self.preprocess()
+        ast = self.parser.parse(text, debug=debug)
+        self.directives = self.parser.get_directives()
+        return ast
+
+    def get_directives(self):
+        return self.directives
+    
 class VerilogSTSWalker(VerilogWalker):
     varmap = None
     paramdic = None
