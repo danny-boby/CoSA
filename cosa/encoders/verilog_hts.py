@@ -425,6 +425,9 @@ class VerilogSTSWalker(VerilogWalker):
     def Always(self, modulename, el, args):
         condition, statements = args[0], args[1]
 
+        if type(statements) == FNode:
+            statements = [statements]
+        
         nonblocking = And([s for s in statements if TS.has_next(s)])
         blocking = And([s for s in statements if not TS.has_next(s)])
         
