@@ -343,10 +343,10 @@ class VerilogSTSWalker(VerilogWalker):
         fv_left = get_free_variables(left)
         fv_right = get_free_variables(right)
 
-        return EqualsOrIff(left, right)
+        return EqualsOrIff(left, B2BV(right))
 
     def SensList(self, modulename, el, args):
-        return And(args)
+        return Or(args)
 
     def Integer(self, modulename, el, args):
         intvar = Symbol(self.varname(modulename, el.name), BVType(MAXINT))
@@ -396,7 +396,7 @@ class VerilogSTSWalker(VerilogWalker):
             Logger.error("Not Implemented")
         else:
             if type(args[0]) == int:
-                condition = TRUE() if args[0] == 1 else FALSE()
+                condition = self.to_bool(args[0])
             elif get_type(args[0]) == BOOL:
                 condition = args[0]
             else:
@@ -413,7 +413,7 @@ class VerilogSTSWalker(VerilogWalker):
         return args
             
     def Always(self, modulename, el, args):
-        fv = [v for v in get_free_variables(args[1]) if not TS.is_prime(v)]
+        fv = [TS.get_ref_var(v) for v in get_free_variables(args[1]) if TS.is_prime(v)]
         frame_cond = And([EqualsOrIff(v, TS.get_prime(v)) for v in fv])
         active = args[1] if args[0] == TRUE() else Implies(args[0], args[1])
         passive = TRUE() if args[0] == TRUE() else Implies(Not(args[0]), frame_cond)
@@ -503,25 +503,33 @@ class VerilogSTSWalker(VerilogWalker):
         return EqualsOrIff(args[0], args[1])
 
     def NotEq(self, modulename, el, args):
-        return Not(EqualsOrIff(args[0], args[1]))
+        return Not(self.Eq(modulename, el, args))
 
     def to_bool(self, el):
         if type(el) == int:
             return FALSE() if el == 0 else TRUE()
         return BV2B(el)
+
+    def to_bv(self, el):
+        if type(el) == int:
+            return BV(el, 1)
+        return B2BV(el)
     
     def And(self, modulename, el, args):
-        return And([self.to_bool(x) for x in args])
+        return BVAnd(self.to_bv(args[0]), self.to_bv(args[1]))
 
     def Land(self, modulename, el, args):
-        return self.And(modulename, el, args)
+        return And([self.to_bool(x) for x in args])
     
     def Xor(self, modulename, el, args):
-        return BVXor(args[0], args[1])
+        return BVXor(self.to_bv(args[0]), self.to_bv(args[1]))
 
     def Or(self, modulename, el, args):
-        return BVOr(B2BV(args[0]), B2BV(args[1]))
+        return BVOr(self.to_bv(args[0]), self.to_bv(args[1]))
 
+    def Lor(self, modulename, el, args):
+        return Or([self.to_bool(x) for x in args])
+    
     def Sll(self, modulename, el, args):
         left, right = args[0], args[1]
         if (type(left) == int) and (type(right) == int):
@@ -541,7 +549,7 @@ class VerilogSTSWalker(VerilogWalker):
              
     def Ulnot(self, modulename, el, args):
         if type(args[0]) == int:
-            return TRUE() if el == 0 else FALSE()
+            return Not(self.to_bool(args[0]))
         zero = BV(0, args[0].symbol_type().width)
         return EqualsOrIff(args[0], zero)
 

@@ -89,7 +89,7 @@ class ProblemSolver(object):
                 ts = monitor.get_sts(instance, pars)
 
                 problem.hts.add_ts(ts)
-                
+
         if problem.verification != VerificationType.EQUIVALENCE:
             assumps = [t[1] for t in sparser.parse_formulae(mc_config.assumptions)]
             lemmas = [t[1] for t in sparser.parse_formulae(mc_config.lemmas)]
@@ -104,6 +104,7 @@ class ProblemSolver(object):
 
         if problem.verification == VerificationType.SAFETY:
             accepted_ver = True
+            Logger.log("Property: %s"%(prop.serialize(threshold=100)), 2)
             res, trace, _ = bmc_safety.safety(prop, bmc_length, bmc_length_min)
 
         if problem.verification == VerificationType.LTL:
@@ -285,6 +286,8 @@ class ProblemSolver(object):
             problem.no_clock = problems.no_clock
             problem.run_coreir_passes = problems.run_coreir_passes
             problem.relative_path = problems.relative_path
+
+            problem.trace_prefix = "".join([problem.relative_path,problem.trace_prefix])
 
             if config.time or problems.time:
                 timer_solve = Logger.start_timer("Problem %s"%problem.name, False)
