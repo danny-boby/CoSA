@@ -396,7 +396,7 @@ class VerilogSTSWalker(VerilogWalker):
         return (args[0] - args[1])+1
     
     def Block(self, modulename, el, args):
-        return And(args)
+        return args
 
     def Cond(self, modulename, el, args):
         return Ite(args[0], args[1], args[2])
@@ -423,12 +423,25 @@ class VerilogSTSWalker(VerilogWalker):
         return args
             
     def Always(self, modulename, el, args):
-        fv = [TS.get_ref_var(v) for v in get_free_variables(args[1]) if TS.is_prime(v)]
-        frame_cond = And([EqualsOrIff(v, TS.get_prime(v)) for v in fv])
-        active = args[1] if args[0] == TRUE() else Implies(args[0], args[1])
-        passive = TRUE() if args[0] == TRUE() else Implies(Not(args[0]), frame_cond)
-        return And(active, passive)
+        condition, statements = args[0], args[1]
 
+        nonblocking = And([s for s in statements if TS.has_next(s)])
+        blocking = And([s for s in statements if not TS.has_next(s)])
+        
+        def gen_formula(statement):
+            if statement == TRUE():
+                return TRUE()
+            fv = [TS.get_ref_var(v) for v in get_free_variables(statement) if TS.is_prime(v)]
+            frame_cond = And([EqualsOrIff(v, TS.get_prime(v)) for v in fv])
+            active = statement if condition == TRUE() else Implies(condition, statement)
+            passive = TRUE() if condition == TRUE() else Implies(Not(condition), frame_cond)
+            return And(active, passive)
+
+        self.ts.invar = And(self.ts.invar, gen_formula(blocking))
+        self.ts.trans = And(self.ts.trans, gen_formula(nonblocking))
+        
+        return gen_formula(And(blocking, nonblocking)) #(condition, blocking, nonblocking)
+    
     def ForStatement(self, modulename, el, args):
 
         # Refining definition in primed format e.g., for(i=0;i<10;i=i+1) into for(i'=0;i<10;i'=i+1)
@@ -454,7 +467,7 @@ class VerilogSTSWalker(VerilogWalker):
         formulae = []
         while True:
             # Evaluate new instance
-            formula = simplify(args[3].substitute(state))
+            formula = simplify(And(args[3]).substitute(state))
             formulae.append(formula)
 
             # Compute next step
@@ -470,10 +483,6 @@ class VerilogSTSWalker(VerilogWalker):
         return And(formulae)
     
     def ModuleDef(self, modulename, el, args):
-        children = list(el.children())
-        always_ids = [children.index(a) for a in children if isinstance(a, Always)]
-        always = And([args[i] for i in always_ids])
-        self.ts.trans = always
         self.hts.add_ts(self.ts)
 
         self.portslist.sort()
