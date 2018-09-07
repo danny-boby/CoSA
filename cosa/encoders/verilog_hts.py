@@ -21,7 +21,7 @@ except:
     VPARSER = False
 
 from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type, get_model, is_sat
-from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT, BVXor, BVOr
+from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT, BVXor, BVOr, BVLShl
 from pysmt.fnode import FNode
 from pysmt.typing import BOOL, BVType, ArrayType, INT
 from pysmt.rewritings import conjunctive_partition
@@ -30,7 +30,7 @@ from cosa.utils.logger import Logger
 from cosa.encoders.template import ModelParser
 from cosa.walkers.verilog_walker import VerilogWalker
 from cosa.representation import HTS, TS
-from cosa.utils.generic import bin_to_dec
+from cosa.utils.generic import bin_to_dec, dec_to_bin
 from cosa.utils.formula_mngm import B2BV, BV2B, get_free_variables
 
 KEYWORDS = ""
@@ -42,6 +42,7 @@ MAXINT = 64
 
 POSEDGE = "posedge"
 NEGEDGE = "negedge"
+LEVEL = "level"
 
 INPUT = "input"
 OUTPUT = "output"
@@ -134,6 +135,9 @@ class VerilogSTSWalker(VerilogWalker):
 
     def Input(self, modulename, el, args):
         return (el.name, args)
+
+    def Inout(self, modulename, el, args):
+        return (el.name, args)
     
     def Output(self, modulename, el, args):
         return (el.name, args)
@@ -204,7 +208,7 @@ class VerilogSTSWalker(VerilogWalker):
 
         direction = el.children()[0]
 
-        if type(direction) in [Input, Output, Reg, Wire]:
+        if type(direction) in [Input, Output, Inout, Reg, Wire]:
             width = args[0][1]
             typ = el.children()[0]
 
@@ -237,6 +241,7 @@ class VerilogSTSWalker(VerilogWalker):
 
         if type(direction) == RegArray:
             low, high = args[0][1][1], args[0][1][0]
+            low, high = min(low, high), max(low, high)
             width = args[0][0]
             vname = el.children()[0].name
             var_idxs = []
@@ -268,7 +273,10 @@ class VerilogSTSWalker(VerilogWalker):
         if el.type == NEGEDGE:
             return And(EqualsOrIff(var, one), EqualsOrIff(TS.get_prime(var), zero))
 
-        Logger.error("Unknown driver at line %d"%el.lineno)
+        if el.type == LEVEL:
+            return EqualsOrIff(var, one)
+        
+        Logger.error("Unknown driver type \"%s\" at line %d"%(el.type, el.lineno))
 
     def Lvalue(self, modulename, el, args):
         return args[0]
@@ -319,8 +327,11 @@ class VerilogSTSWalker(VerilogWalker):
 
         if "'b" in el.value:
             width, value = el.value.split("'b")
+            if value == "z":
+                value = dec_to_bin(int((2**int(width))-1), int(width))
             if width == "":
                 return int(bin_to_dec(value))
+
             return BV(int(bin_to_dec(value)), int(width))
         
         return int(el.value)
@@ -340,6 +351,9 @@ class VerilogSTSWalker(VerilogWalker):
     def Block(self, modulename, el, args):
         return And(args)
 
+    def Cond(self, modulename, el, args):
+        return Ite(args[0], args[1], args[2])
+    
     def IfStatement(self, modulename, el, args):
         if type(args[1]) == list:
             Logger.error("Not Implemented")
@@ -462,12 +476,26 @@ class VerilogSTSWalker(VerilogWalker):
     def And(self, modulename, el, args):
         return And([self.to_bool(x) for x in args])
 
+    def Land(self, modulename, el, args):
+        return self.And(modulename, el, args)
+    
     def Xor(self, modulename, el, args):
         return BVXor(args[0], args[1])
 
     def Or(self, modulename, el, args):
         return BVOr(B2BV(args[0]), B2BV(args[1]))
-    
+
+    def Sll(self, modulename, el, args):
+        left, right = args[0], args[1]
+        if (type(left) == int) and (type(right) == int):
+            return left << right
+        if (type(left) == int) and (type(right) == FNode):
+            left = BV(left, get_type(right).width)
+        if (type(right) == int) and (type(left) == FNode):
+            right = BV(right, get_type(left).width)
+        
+        return BVLShl(left, right)
+        
     def LessThan(self, modulename, el, args):
         left, right = args[0], args[1]
         if type(right) == int:
@@ -527,6 +555,9 @@ class VerilogSTSWalker(VerilogWalker):
             width_idx = get_type(args[1]).width
             mem_locations = args[0]
             return self._mem_access(args[1], mem_locations, width_mem, width_idx)
+
+        if (type(args[0]) == list) and (type(args[1]) == int):
+            return args[0][args[1]]
         
         return BVExtract(args[0], args[1], args[1])
 
