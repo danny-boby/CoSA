@@ -8,7 +8,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pysmt.shortcuts import Symbol, And, TRUE, simplify, EqualsOrIff
+from pysmt.shortcuts import Symbol, And, TRUE, simplify, EqualsOrIff, get_type
 from cosa.utils.formula_mngm import get_free_variables, substitute
 
 NEXT = "_N"
@@ -72,6 +72,13 @@ class HTS(object):
 
     def add_output_var(self, var):
         self.output_vars.add(var)
+        self.vars.add(var)
+
+    def add_state_var(self, var):
+        self.state_vars.add(var)
+        self.vars.add(var)
+        
+    def add_var(self, var):
         self.vars.add(var)
         
     def update_logic(self, logic):
@@ -175,7 +182,10 @@ class HTS(object):
                 self.add_lemma(lemma)
 
     def newname(self, varname, path=[]):
-        return varname.replace(self.name, ".".join(path))
+        ret = varname.replace(self.name, ".".join(path)).strip()
+        if ret[0] == ".":
+            ret = ret[1:]
+        return ret
 
     def get_TS(self):
         ts = TS()
@@ -190,21 +200,48 @@ class HTS(object):
         return ts
     
     def flatten(self, path=[]):
-        
         vardic = dict([(v.symbol_name(), v) for v in self.vars])
+
+        def full_path(name, path):
+            ret = ".".join(path+[name])
+            if ret[0] == ".":
+                return ret[1:]
+            return ret
+        
         for sub in self.subs:
             instance, actual, module = sub
             formal = module.params
 
             ts = TS("FLATTEN")
-            (ts.init, ts.trans, ts.invar) = module.flatten(path+[instance])
+            (sub_vars, sub_state_vars, ts.init, ts.trans, ts.invar) = module.flatten(path+[instance])
             self.add_ts(ts)
+            
+            for var in sub_vars:
+                self.add_var(var)
 
+            for var in sub_state_vars:
+                self.add_state_var(var)
+                
             links = TRUE()
             for i in range(len(actual)):
-                local_var = ".".join(path+[actual[i]])
+                if type(actual[i]) == str:
+                    local_expr = vardic[full_path(actual[i], path)]
+                else:
+                    local_vars = [(v, full_path(v.symbol_name(), path)) for v in get_free_variables(actual[i])]
+                    for local_var in local_vars:
+                        if local_var[1] not in vardic:
+                            modulevar = Symbol(local_var[1], local_var[0].symbol_type())
+                            self.vars.add(modulevar)
+                            vardic[local_var[1]] = modulevar
+                    
+                    local_expr = substitute(actual[i], dict([(v[0].symbol_name(), vardic[v[1]].symbol_name()) for v in local_vars]))
                 module_var = sub[2].newname(formal[i].symbol_name(), path+[sub[0]])
-                links = And(links, EqualsOrIff(vardic[local_var], vardic[module_var]))
+                assert sub[2].name != ""
+                if module_var not in vardic:
+                    modulevar = Symbol(module_var, formal[i].symbol_type())
+                    self.vars.add(modulevar)
+                    vardic[module_var] = modulevar
+                links = And(links, EqualsOrIff(local_expr, vardic[module_var]))
                 
             ts = TS("LINKS")
             ts.invar = links
@@ -220,8 +257,16 @@ class HTS(object):
         s_init = substitute(s_init, replace_dic)
         s_invar = substitute(s_invar, replace_dic)
         s_trans = substitute(s_trans, replace_dic)
-        
-        return (s_init, s_trans, s_invar)
+
+        local_vars = []
+        local_state_vars = []
+        for var in self.vars:
+            local_vars.append(Symbol(replace_dic[var.symbol_name()], var.symbol_type()))
+
+        for var in self.state_vars:
+            local_state_vars.append(Symbol(replace_dic[var.symbol_name()], var.symbol_type()))
+            
+        return (local_vars, local_state_vars, s_init, s_trans, s_invar)
                 
     def __copy__(self):
         cls = self.__class__

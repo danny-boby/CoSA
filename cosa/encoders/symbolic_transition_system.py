@@ -123,7 +123,7 @@ class SymbolicTSParser(ModelParser):
     
     def __init__(self):
         self.parser = self.__init_parser()
-        self.parser.ignore("#" + SkipTo(lineEnd))
+        self.parser.ignore(T_COM + SkipTo(lineEnd))
 
     def parse_file(self, strfile, flags=None):
         with open(strfile, "r") as f:
@@ -384,7 +384,7 @@ class SymbolicTSParser(ModelParser):
 
         for var in outputs:
             ts.add_output_var(self._define_var(var, module.name))
-            
+        
         self._check_parameters(module, modulesdic, ts.vars)
 
         for par in module.pars:
@@ -452,17 +452,21 @@ class SymbolicTSParser(ModelParser):
     def get_extensions():
         return SymbolicTSParser.extensions
     
-class SymbolicSimpleTSParser(object):
+class SymbolicSimpleTSParser(ModelParser):
     parser = None
     extensions = ["ssts"]
-
-    @staticmethod        
-    def get_extensions():
-        return SymbolicSimpleTSParser.extensions
+    name = "SimpleSTS"
     
     def __init__(self):
         pass
 
+    @staticmethod        
+    def get_extensions():
+        return SymbolicSimpleTSParser.extensions
+
+    def is_available(self):
+        return True
+    
     def remap_an2or(self, name):
         return name
 
@@ -474,13 +478,12 @@ class SymbolicSimpleTSParser(object):
             return self.parse_string(f.readlines())
 
     def _define_var(self, varname, vartype):
-        vartype, size = vartype[0], vartype[1]
-        
-        if vartype == T_BV:
-            return Symbol(varname, BVType(int(size)))
-
         if vartype == T_BOOL:
             return Symbol(varname, BOOL)
+
+        if vartype[0] == T_BV:
+            vartype, size = vartype[0], vartype[1]
+            return Symbol(varname, BVType(int(size)))
         
         Logger.error("Unsupported type: %s"%vartype)
         
@@ -506,9 +509,9 @@ class SymbolicSimpleTSParser(object):
         for line in lines:
             count += 1
 
-            if line.strip() in ["","\n"]:
+            if (line.strip() in ["","\n"]) or line[0] == T_COM:
                 continue
-            
+
             if T_VAR == line[:len(T_VAR)]:
                 section = var
                 continue
@@ -539,7 +542,7 @@ class SymbolicSimpleTSParser(object):
             
             if section in [var, state, input, output]:
                 line = line[:-2].replace(" ","").split(":")
-                varname, vartype = line[0], (line[1][:-1].split("("))
+                varname, vartype = line[0], (line[1][:-1].split("(")) if "(" in line[1] else line[1]
                 if varname[0] == "'":
                     varname = varname[1:-1]
                 vardef = self._define_var(varname, vartype)

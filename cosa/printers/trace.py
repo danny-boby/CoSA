@@ -22,7 +22,11 @@ NL = "\n"
 VCD_SEP = "-"
 
 # Variables starting with HIDDEN are not printed
-HIDDEN = "_-_"
+HIDDEN = "H__"
+
+BV = 0
+HEX = 1
+BIN = 2
 
 class TracePrinter(object):
 
@@ -40,6 +44,8 @@ class TracePrinter(object):
 
 class TextTracePrinter(TracePrinter):
 
+    values_base = BV
+    
     def __init__(self):
         self.extra_vars = None
         self.diff_only = True
@@ -52,8 +58,6 @@ class TextTracePrinter(TracePrinter):
         trace = []
         prevass = []
 
-        hex_values = False
-        
         trace.append("---> INIT <---")
 
         if self.all_vars:
@@ -72,8 +76,10 @@ class TextTracePrinter(TracePrinter):
                 prevass.append((var[0], None))
                 continue
             varass = (var[0], modeldic[var_0])
-            if hex_values:
+            if (self.values_base == HEX) and (var[1].symbol_type().is_bv_type()):
                 varass = (varass[0], dec_to_hex(varass[1].constant_value(), int(var[1].symbol_type().width/4)))
+            if (self.values_base == BIN) and (var[1].symbol_type().is_bv_type()):
+                varass = (varass[0], dec_to_bin(varass[1].constant_value(), var[1].symbol_type().width))
             if self.diff_only: prevass.append(varass)
             trace.append("  I: %s = %s"%(varass[0], varass[1]))
 
@@ -87,8 +93,10 @@ class TextTracePrinter(TracePrinter):
                 if var_t not in modeldic:
                     continue
                 varass = (var[0], modeldic[var_t])
-                if hex_values:
+                if (self.values_base == HEX) and (var[1].symbol_type().is_bv_type()):
                     varass = (varass[0], dec_to_hex(varass[1].constant_value(), int(var[1].symbol_type().width/4)))
+                if (self.values_base == BIN) and (var[1].symbol_type().is_bv_type()):
+                    varass = (varass[0], dec_to_bin(varass[1].constant_value(), var[1].symbol_type().width))
                 if (not self.diff_only) or (prevass[varass[0]] != varass[1]):
                     trace.append("  S%s: %s = %s"%(t+1, varass[0], varass[1]))
                     if self.diff_only: prevass[varass[0]] = varass[1]

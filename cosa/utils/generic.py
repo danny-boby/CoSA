@@ -69,3 +69,7 @@ def restore_output(saved_status):
     (devnull, old_stdout) = saved_status
     os.dup2(old_stdout, 1)
     devnull.close()
+
+def class_name(obj):
+    return obj.__class__.__name__
+    

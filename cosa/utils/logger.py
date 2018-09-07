@@ -14,7 +14,7 @@ import inspect
 
 class Logger(object):
     verbosity = 0
-    linenum_verbosity = 4
+    linenum_verbosity = 5
     id_timer = 0
     timers = []
     time = False
