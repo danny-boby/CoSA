@@ -8,13 +8,10 @@ module Counters #(parameter SIZE = 10)
    reg [SIZE-1:0] val1;
    reg [SIZE-1:0] val2;
    
-   
    Counter #(.SIZE(SIZE)) counter1 (.clk (clk), .rst (rst), .val (val1));
-
    Counter #(.SIZE(SIZE)) counter2 (.clk (clk), .rst (rst), .val (val2));
-
    Adder #(.SIZE(SIZE)) adder (.in1 (val1), .in2 (val2), .out (out));
-     
+
 endmodule
 
 module Counter #(parameter SIZE = 16) 
@@ -26,12 +23,13 @@ module Counter #(parameter SIZE = 16)
 
    initial val = 'b0;
    
-   always @(posedge clk or posedge rst) begin
-      if (rst)
-        val = 'b0;
-      else
-        val <= val + 1;
-   end
+   always @(posedge clk or posedge rst)
+     begin
+        if (rst)
+          val = 'b0;
+        else
+          val <= val + 1;
+     end
 
 endmodule
 

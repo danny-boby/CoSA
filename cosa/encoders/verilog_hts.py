@@ -718,8 +718,9 @@ class VerilogSTSWalker(VerilogWalker):
     def RegArray(self, modulename, el, args):
         return args
 
-    # def IdentifierScope(self, modulename, el, args):
-    #     return el
+    def IdentifierScope(self, modulename, el, args):
+        return el
     
-    # def IdentifierScopeLabel(self, modulename, el, args):
-    #     return el
+    def IdentifierScopeLabel(self, modulename, el, args):
+        Logger.error("Unsupported indentifier scope, line %d"%(el.lineno))
+        return el
