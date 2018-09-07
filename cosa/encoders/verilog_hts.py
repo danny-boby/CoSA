@@ -328,6 +328,8 @@ class VerilogSTSWalker(VerilogWalker):
         if "'b" in el.value:
             width, value = el.value.split("'b")
             if value == "z":
+                if width == "":
+                    Logger.error("High Bit value definition requires size, line %d"%el.lineno)
                 value = dec_to_bin(int((2**int(width))-1), int(width))
             if width == "":
                 return int(bin_to_dec(value))
