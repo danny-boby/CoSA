@@ -16,6 +16,7 @@ VPARSER = True
 
 try:
     from pyverilog.vparser.parser import VerilogParser, VerilogPreprocessor
+    from pyverilog.vparser.plyparser import ParseError
     from pyverilog.vparser.ast import *
 except:
     VPARSER = False
@@ -114,7 +115,10 @@ class VerilogCodeParser(object):
 
     def parse(self, preprocess_output='preprocess.output', debug=0):
         text = self.preprocess()
-        ast = self.parser.parse(text, debug=debug)
+        try:
+            ast = self.parser.parse(text, debug=debug)
+        except ParseError as e:
+            Logger.error("Parsing at line %s"%(e))
         self.directives = self.parser.get_directives()
         return ast
 
@@ -713,3 +717,9 @@ class VerilogSTSWalker(VerilogWalker):
 
     def RegArray(self, modulename, el, args):
         return args
+
+    # def IdentifierScope(self, modulename, el, args):
+    #     return el
+    
+    # def IdentifierScopeLabel(self, modulename, el, args):
+    #     return el
