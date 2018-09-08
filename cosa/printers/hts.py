@@ -187,8 +187,10 @@ class STSHTSPrinter(HTSPrinter):
 
         for (sname, vars) in sections:
             if len(vars) > 0: self.write("%s\n"%sname)
-            for var in vars:
-                sname = self.names(var.symbol_name())
+            varstr = [(self.names(v.symbol_name()), v) for v in vars]
+            varstr.sort()
+            for var in varstr:
+                var, sname = var[1], var[0]
                 if var.symbol_type() == BOOL:
                     self.write("%s : Bool;\n"%(sname))
                 else:
