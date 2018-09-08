@@ -32,6 +32,7 @@ FLAG_ST = "]"
 FLAG_SP = "+"
 
 MODEL_SP = ";"
+FILE_SP  = ","
 
 class ProblemSolver(object):
     parser = None
@@ -187,7 +188,7 @@ class ProblemSolver(object):
         invar_props = []
         ltl_props = []
 
-        models = model_files.split(MODEL_SP)
+        models = model_files.split(FILE_SP)
 
         for strfile in models:
             (strfile, flags) = self.get_file_flags(strfile)
