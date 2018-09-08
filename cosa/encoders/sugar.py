@@ -74,8 +74,10 @@ class MemAccess(SyntacticSugar):
                           and v.symbol_name() != memname]
             memsymbols.sort()
             memsize = len(memsymbols)
-
-            return memsymbols[right.constant_value()][1]
+            location = right.constant_value()
+            if location > memsize-1:
+                Logger.error("Out of bound access for memory \"%s\", size %d"%(memname, memsize))
+            return memsymbols[location][1]
         else:
             Logger.error("Symbolic memory access is not supported")
     
