@@ -8,8 +8,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pysmt.shortcuts import Not, And, get_type, BV, EqualsOrIff
-from pysmt.parsing import Rule, UnaryOpAdapter
+from pysmt.shortcuts import Not, And, get_type, BV, EqualsOrIff, get_env
+from pysmt.parsing import Rule, UnaryOpAdapter, InfixOpAdapter, FunctionCallAdapter
 from cosa.utils.logger import Logger
 from cosa.representation import TS
 from cosa.encoders.template import SyntacticSugar
@@ -58,3 +58,24 @@ class NoChange(SyntacticSugar):
 
     def NoChange(self, x):
         return EqualsOrIff(x, TS.to_next(x))
+
+class MemAccess(SyntacticSugar):
+    name = "memacc"
+    description = "Memory Access"
+
+    def adapter(self):
+        return FunctionCallAdapter(self.MemAcc, 60)
+
+    def MemAcc(self, left, right):
+        if right.is_int_constant():
+            memname = left.symbol_name()
+            memsymbols = [(v.symbol_name(), v) for v in get_env().formula_manager.get_all_symbols() \
+                          if (not TS.is_prime(v)) and (v.symbol_name()[:len(memname)] == memname) \
+                          and v.symbol_name() != memname]
+            memsymbols.sort()
+            memsize = len(memsymbols)
+
+            return memsymbols[right.constant_value()][1]
+        else:
+            Logger.error("Symbolic memory access is not supported")
+    

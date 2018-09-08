@@ -295,6 +295,7 @@ class VerilogSTSWalker(VerilogWalker):
                 self.ts.add_state_var(var_idx)
 
             self.add_var(modulename, vname, var_idxs)
+            self.ts.add_var(Symbol(self.varname(modulename, vname), BVType(width)))
                 
             return var_idxs
         

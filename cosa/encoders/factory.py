@@ -16,8 +16,9 @@ class SyntacticSugarFactory(object):
     # Additional syntactic sugar should be registered here #
     @staticmethod
     def init_sugar():
-        from cosa.encoders.sugar import Posedge, Negedge, Change, NoChange
+        from cosa.encoders.sugar import Posedge, Negedge, Change, NoChange, MemAccess
     
+        SyntacticSugarFactory.register_sugar(MemAccess())
         SyntacticSugarFactory.register_sugar(Posedge())
         SyntacticSugarFactory.register_sugar(Negedge())
         SyntacticSugarFactory.register_sugar(Change())

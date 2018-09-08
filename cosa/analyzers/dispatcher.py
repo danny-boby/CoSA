@@ -31,7 +31,7 @@ FLAG_SR = "["
 FLAG_ST = "]"
 FLAG_SP = "+"
 
-MODEL_SP = ","
+MODEL_SP = ";"
 
 class ProblemSolver(object):
     parser = None
