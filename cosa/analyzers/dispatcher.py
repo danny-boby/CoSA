@@ -212,30 +212,6 @@ class ProblemSolver(object):
                     parser = av_parser
                     if not self.parser:
                         self.parser = av_parser
-                
-            # if filetype in ExplicitTSParser.get_extensions():
-            #     parser = ExplicitTSParser()
-
-            #     if not self.parser:
-            #         self.parser = parser
-                                        
-            # if filetype in SymbolicTSParser.get_extensions():
-            #     parser = SymbolicTSParser()
-
-            #     if not self.parser:
-            #         self.parser = parser
-
-            # if filetype in SymbolicSimpleTSParser.get_extensions():
-            #     parser = SymbolicSimpleTSParser()
-
-            #     if not self.parser:
-            #         self.parser = parser
-                    
-            # if filetype in BTOR2Parser.get_extensions():
-            #     parser = BTOR2Parser()
-
-            #     if not self.parser:
-            #         self.parser = parser
                     
             if parser is not None:
                 if not os.path.isfile(strfile):

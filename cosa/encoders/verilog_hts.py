@@ -32,7 +32,7 @@ from cosa.encoders.template import ModelParser
 from cosa.walkers.verilog_walker import VerilogWalker
 from cosa.representation import HTS, TS
 from cosa.utils.generic import bin_to_dec, dec_to_bin
-from cosa.utils.formula_mngm import B2BV, BV2B, get_free_variables, substitute
+from cosa.utils.formula_mngm import B2BV, BV2B, get_free_variables, substitute, mem_access
 
 KEYWORDS = ""
 KEYWORDS += "module wire assign else reg always endmodule end define integer generate "
@@ -599,32 +599,26 @@ class VerilogSTSWalker(VerilogWalker):
         invar = EqualsOrIff(B2BV(args[0]), B2BV(args[1]))
         self.ts.invar = And(self.ts.invar, invar)
         return el
-
-    def _mem_access(self, address, locations, width_mem, width_idx, idx=0):
-        if len(locations) == 1:
-            return locations[0]
-        location = BV(idx, width_idx)
-        return Ite(EqualsOrIff(address, location), locations[0], self._mem_access(address, locations[1:], width_mem, width_idx, idx+1))
     
     def Pointer(self, modulename, el, args):
         if type(args[0]) == tuple:
             width = get_type(args[1]).width
             mem_size = args[0][1]
             mem_locations = ["%s_%d"%(args[0][0], i) for i in range(mem_size[0], mem_size[1]+1)]
-            return self._mem_access(args[1], [self.varmap[v] for v in mem_locations], width, width)
+            return mem_access(args[1], [self.varmap[v] for v in mem_locations], width, width)
 
         if (type(args[0]) == FNode) and (type(args[1]) == FNode):
             width_mem = get_type(args[0]).width
             width_idx = get_type(args[1]).width
             mem_locations = [BVExtract(args[0], i, i) for i in range(width_mem)]
-            return self._mem_access(args[1], mem_locations, width_mem, width_idx)
+            return mem_access(args[1], mem_locations, width_mem, width_idx)
 
         # Management of memory access
         if (type(args[0]) == list) and (type(args[1]) == FNode):
             width_mem = len(args[0])
             width_idx = get_type(args[1]).width
             mem_locations = args[0]
-            return self._mem_access(args[1], mem_locations, width_mem, width_idx)
+            return mem_access(args[1], mem_locations, width_mem, width_idx)
 
         if (type(args[0]) == list) and (type(args[1]) == int):
             return args[0][args[1]]

@@ -95,3 +95,9 @@ def quote_names(strformula, prefix=None, replace_ops=True):
             strformula = strformula.replace(op[0], op[1])
 
     return strformula
+
+def mem_access(address, locations, width_mem, width_idx, idx=0):
+    if len(locations) == 1:
+        return locations[0]
+    location = BV(idx, width_idx)
+    return Ite(EqualsOrIff(address, location), locations[0], mem_access(address, locations[1:], width_mem, width_idx, idx+1))

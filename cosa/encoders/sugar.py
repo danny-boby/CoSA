@@ -13,7 +13,7 @@ from pysmt.parsing import Rule, UnaryOpAdapter, InfixOpAdapter, FunctionCallAdap
 from cosa.utils.logger import Logger
 from cosa.representation import TS
 from cosa.encoders.template import SyntacticSugar
-from cosa.utils.formula_mngm import BV2B, B2BV
+from cosa.utils.formula_mngm import BV2B, B2BV, mem_access
 
 class Posedge(SyntacticSugar):
     name = "posedge"
@@ -67,17 +67,32 @@ class MemAccess(SyntacticSugar):
         return FunctionCallAdapter(self.MemAcc, 60)
 
     def MemAcc(self, left, right):
+        primed = False
+        if TS.is_prime(left):
+            primed = True
+            left = TS.get_ref_var(left)
+
+        timed_symbol = lambda v: v if not primed else TS.get_prime(v)
+            
+        memname = left.symbol_name()
+        memsymbols = [(v.symbol_name(), timed_symbol(v)) for v in get_env().formula_manager.get_all_symbols() \
+                      if (not TS.is_prime(v)) and (v.symbol_name()[:len(memname)] == memname) \
+                      and v.symbol_name() != memname]
+        memsymbols.sort()
+        memsize = len(memsymbols)
+
+        if memsize < 1:
+            Logger.error("Memory \"%s\" has size 1"%(memname))
+        
         if right.is_int_constant():
-            memname = left.symbol_name()
-            memsymbols = [(v.symbol_name(), v) for v in get_env().formula_manager.get_all_symbols() \
-                          if (not TS.is_prime(v)) and (v.symbol_name()[:len(memname)] == memname) \
-                          and v.symbol_name() != memname]
-            memsymbols.sort()
-            memsize = len(memsymbols)
             location = right.constant_value()
             if location > memsize-1:
                 Logger.error("Out of bound access for memory \"%s\", size %d"%(memname, memsize))
             return memsymbols[location][1]
         else:
-            Logger.error("Symbolic memory access is not supported")
+            if not (right.is_symbol() and right.symbol_type().is_bv_type()):
+                Logger.error("Symbolic memory access requires Bitvector indexing")
+            width_idx = right.symbol_type().width
+            width_mem = min(memsize, width_idx)
+            return mem_access(right, [m[1] for m in memsymbols], width_mem, width_idx)
     
