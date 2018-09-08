@@ -16,7 +16,7 @@ from pysmt.shortcuts import BOOL
 
 from cosa.representation import TS
 from cosa.encoders.coreir import SEP
-from cosa.utils.generic import dec_to_bin, dec_to_hex
+from cosa.utils.generic import dec_to_bin, dec_to_hex, sort_system_variables
 
 NL = "\n"
 VCD_SEP = "-"
@@ -67,8 +67,7 @@ class TextTracePrinter(TracePrinter):
             if self.extra_vars is not None:
                 varlist = list(set(varlist).union(set(self.extra_vars)))
 
-        strvarlist = [(map_function(var.symbol_name()), var) for var in varlist if not self.is_hidden(var.symbol_name())]
-        strvarlist.sort()
+        strvarlist = [(map_function(var[0]), var[1]) for var in sort_system_variables(varlist, True) if not self.is_hidden(var[0])]
         
         for var in strvarlist:
             var_0 = TS.get_timed(var[1], 0)
