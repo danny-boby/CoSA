@@ -88,8 +88,9 @@ class MemAccess(SyntacticSugar):
         timed_symbol = lambda v: v if not primed else TS.get_prime(v)
             
         memname = left.symbol_name()
-        memsymbols = [(v.symbol_name(), timed_symbol(v)) for v in get_env().formula_manager.get_all_symbols() \
-                      if (not TS.is_prime(v)) and (v.symbol_name()[:len(memname)] == memname) \
+        allsymbols = list(get_env().formula_manager.get_all_symbols())
+        memsymbols = [(v.symbol_name(), timed_symbol(v)) for v in allsymbols \
+                      if (not TS.is_prime(v)) and (not TS.is_timed(v)) and (v.symbol_name()[:len(memname)] == memname) \
                       and v.symbol_name() != memname]
         memsymbols.sort()
         memsize = len(memsymbols)
@@ -107,5 +108,5 @@ class MemAccess(SyntacticSugar):
                 Logger.error("Symbolic memory access requires Bitvector indexing")
             width_idx = right.symbol_type().width
             width_mem = min(memsize, width_idx)
-            return mem_access(right, [m[1] for m in memsymbols], width_mem, width_idx)
+            return mem_access(right, [m[1] for m in memsymbols], width_idx)
     

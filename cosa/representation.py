@@ -385,6 +385,10 @@ class TS(object):
         return v.symbol_name()[-len(NEXT):] == NEXT
 
     @staticmethod
+    def is_timed(v):
+        return AT in v.symbol_name()
+    
+    @staticmethod
     def is_prev(v):
         return v.symbol_name()[-len(PREV):] == PREV
 

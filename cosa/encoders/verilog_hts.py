@@ -605,20 +605,20 @@ class VerilogSTSWalker(VerilogWalker):
             width = get_type(args[1]).width
             mem_size = args[0][1]
             mem_locations = ["%s_%d"%(args[0][0], i) for i in range(mem_size[0], mem_size[1]+1)]
-            return mem_access(args[1], [self.varmap[v] for v in mem_locations], width, width)
+            return mem_access(args[1], [self.varmap[v] for v in mem_locations], width)
 
         if (type(args[0]) == FNode) and (type(args[1]) == FNode):
             width_mem = get_type(args[0]).width
             width_idx = get_type(args[1]).width
             mem_locations = [BVExtract(args[0], i, i) for i in range(width_mem)]
-            return mem_access(args[1], mem_locations, width_mem, width_idx)
+            return mem_access(args[1], mem_locations, width_idx)
 
         # Management of memory access
         if (type(args[0]) == list) and (type(args[1]) == FNode):
             width_mem = len(args[0])
             width_idx = get_type(args[1]).width
             mem_locations = args[0]
-            return mem_access(args[1], mem_locations, width_mem, width_idx)
+            return mem_access(args[1], mem_locations, width_idx)
 
         if (type(args[0]) == list) and (type(args[1]) == int):
             return args[0][args[1]]

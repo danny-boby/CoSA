@@ -96,8 +96,8 @@ def quote_names(strformula, prefix=None, replace_ops=True):
 
     return strformula
 
-def mem_access(address, locations, width_mem, width_idx, idx=0):
-    if len(locations) == 1:
+def mem_access(address, locations, width_idx, idx=0):
+    if (len(locations) == 1) or (idx == 2**width_idx):
         return locations[0]
     location = BV(idx, width_idx)
-    return Ite(EqualsOrIff(address, location), locations[0], mem_access(address, locations[1:], width_mem, width_idx, idx+1))
+    return Ite(EqualsOrIff(address, location), locations[0], mem_access(address, locations[1:], width_idx, idx+1))
