@@ -8,7 +8,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pysmt.shortcuts import Not, And, get_type, BV, EqualsOrIff, get_env
+from pysmt.shortcuts import Not, And, get_type, BV, EqualsOrIff, get_env, get_type
 from pysmt.parsing import Rule, UnaryOpAdapter, InfixOpAdapter, FunctionCallAdapter
 from cosa.utils.logger import Logger
 from cosa.representation import TS
@@ -59,6 +59,19 @@ class NoChange(SyntacticSugar):
     def NoChange(self, x):
         return EqualsOrIff(x, TS.to_next(x))
 
+class MaxBvVal(SyntacticSugar):
+    name = "maxbvval"
+    description = "Maximum Bitvector value"
+
+    def adapter(self):
+        return UnaryOpAdapter(self.MaxBvVal, 100)
+
+    def MaxBvVal(self, x):
+        if type(x) == int:
+            return BV((2**x)-1,x)
+        size = get_type(x).width
+        return BV((2**size)-1,size)
+    
 class MemAccess(SyntacticSugar):
     name = "memacc"
     description = "Memory Access"
