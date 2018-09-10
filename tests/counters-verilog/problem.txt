@@ -1,5 +1,5 @@
 [GENERAL]
-model_file: counters.v[Counters]
+model_file: Counters.v[Counters]
 assume_if_true: True
 
 [DEFAULT]

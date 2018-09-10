@@ -106,7 +106,7 @@ class ProblemSolver(object):
             else:
                 (strprop, prop, types) = lparser.parse_formulae(mc_config.properties)[0]
 
-        problem.formula = prop
+            problem.formula = prop
                 
         if problem.verification == VerificationType.SAFETY:
             accepted_ver = True
