@@ -46,6 +46,11 @@ class VerificationStatus(object):
         
         Logger.error("Invalid Verification Status \"%s\""%status)
 
+    @staticmethod        
+    def compare(expected, status):
+        if (expected == VerificationStatus.UNK) and (status == VerificationStatus.TRUE):
+            return True
+        return expected == status
         
 class VerificationType(object):
     SAFETY = 0
@@ -67,6 +72,7 @@ class Problems(object):
     boolean = None
     time = False
     assume_if_true = False
+    verification = None
     
     def __init__(self):
         self.problems = []
@@ -113,6 +119,8 @@ class Problems(object):
                 for attr,value in problem.items():
                     if hasattr(self, attr):
                         setattr(self, attr, auto_convert(value))
+                    else:
+                        Logger.error("Attribute \"%s\" not found"%attr)
                 continue
             pbm = self.generate_problem(value, problem)
             pbm.name = value

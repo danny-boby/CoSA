@@ -268,6 +268,7 @@ class ProblemSolver(object):
                    (problem.status == VerificationStatus.TRUE) and \
                    (problem.assumptions == None) and \
                    (problem.verification == VerificationType.SAFETY):
+
                     ass_ts = TS("Previous assumption from property")
                     if TS.has_next(problem.formula):
                         ass_ts.trans = problem.formula
