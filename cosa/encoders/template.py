@@ -13,9 +13,21 @@ from cosa.utils.logger import Logger
 class ModelFlags(object):
     NO_INIT = "NO-INIT"
 
+class EncoderConfig(object):
+    abstract_clock = False
+    symbolic_init = False
+    no_clock = False
+    deterministic = False
+    run_passes = True
+    boolean = False
+
+    def __init__(self):
+        pass
+    
 class ModelParser(object):
     extensions = None
     name = None
+    config = None
     
     def __init__(self):
         pass
@@ -23,7 +35,7 @@ class ModelParser(object):
     def parse_string(self, string):
         Logger.error("Not implemented")
 
-    def parse_file(self, strfile, flags=None):
+    def parse_file(self, strfile, config, flags=None):
         Logger.error("Not implemented")
 
     def get_name(self):

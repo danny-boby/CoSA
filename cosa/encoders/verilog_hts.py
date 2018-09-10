@@ -61,7 +61,7 @@ class VerilogHTSParser(ModelParser):
     def is_available(self):
         return VPARSER
 
-    def parse_file(self, strfile, flags=None):
+    def parse_file(self, strfile, config, flags=None):
         invar_props = []
         ltl_props = []
 

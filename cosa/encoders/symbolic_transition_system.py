@@ -125,7 +125,7 @@ class SymbolicTSParser(ModelParser):
         self.parser = self.__init_parser()
         self.parser.ignore(T_COM + SkipTo(lineEnd))
 
-    def parse_file(self, strfile, flags=None):
+    def parse_file(self, strfile, config, flags=None):
         with open(strfile, "r") as f:
             return self.parse_string(f.read())
 
@@ -473,7 +473,7 @@ class SymbolicSimpleTSParser(ModelParser):
     def remap_or2an(self, name):
         return name
     
-    def parse_file(self, strfile, flags=None):
+    def parse_file(self, strfile, config, flags=None):
         with open(strfile, "r") as f:
             return self.parse_string(f.readlines())
 

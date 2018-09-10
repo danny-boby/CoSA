@@ -29,8 +29,8 @@ PASSES.append("techmap -map +/adff2dff.v")
 PASSES.append("setundef -zero -undriven")
 PASSES.append("pmuxtree")
 PASSES.append("rename -hide")
-PASSES.append("clk2fflogic")
 PASSES.append("proc")
+PASSES.append("clk2fflogic")
 PASSES.append("opt")
 
 COMMANDS = []
@@ -56,6 +56,7 @@ class VerilogYosysParser(ModelParser):
     name = "Verilog"
 
     files_from_dir = False
+    single_file = True
     
     def __init__(self):
         pass
@@ -97,7 +98,7 @@ class VerilogYosysParser(ModelParser):
 
         return new_filenames
     
-    def parse_file(self, strfile, flags=None):
+    def parse_file(self, strfile, config, flags=None):
         if flags is None:
             Logger.error("Top module not provided")
 
@@ -105,12 +106,15 @@ class VerilogYosysParser(ModelParser):
         absstrfile = os.path.abspath(strfile)
         directory = "/".join(absstrfile.split("/")[:-1])
         filename = absstrfile.split("/")[-1]
-        
-        if self.files_from_dir:
-            files = ["%s/%s"%(directory, f) for f in os.listdir(directory) if self._get_extension(f) in self.extensions]
+
+        if self.single_file:
+            files = [absstrfile]
         else:
-            files = ["%s/%s"%(directory, f) for f in list(set(self._collect_dependencies(directory, filename)))]
-            files.append(absstrfile)
+            if self.files_from_dir:
+                files = ["%s/%s"%(directory, f) for f in os.listdir(directory) if self._get_extension(f) in self.extensions]
+            else:
+                files = ["%s/%s"%(directory, f) for f in list(set(self._collect_dependencies(directory, filename)))]
+                files.append(absstrfile)
 
         command = "%s -p \"%s\""%(CMD, "; ".join(COMMANDS))
         command = command.format(FILES=" ".join(files), \
