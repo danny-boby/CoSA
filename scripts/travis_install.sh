@@ -23,10 +23,10 @@ export COREIRCONFIG="g++-4.9"
 
 if [ ! -f "$COREIR" ]; then
     rm -fr coreir*
-    wget https://github.com/rdaly525/coreir/archive/a20cb469a10f504ebed6ea8a1872bb5baac406c2.zip
-    unzip a20cb469a10f504ebed6ea8a1872bb5baac406c2.zip
-    rm a20cb469a10f504ebed6ea8a1872bb5baac406c2.zip
-    mv coreir-a20cb469a10f504ebed6ea8a1872bb5baac406c2 coreir
+    wget https://github.com/rdaly525/coreir/archive/master.zip
+    unzip master.zip
+    rm master.zip
+    mv coreir-master coreir
     cd coreir && make -j4 && sudo make install
     cd ..
 else
