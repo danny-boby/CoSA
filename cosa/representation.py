@@ -32,9 +32,9 @@ class HTS(object):
     assumptions = None
     lemmas = None
 
-    init = None
-    trans = None
-    invar = None
+    _s_init = None
+    _s_trans = None
+    _s_invar = None
 
     logic = None
     en_simplify = False
@@ -52,9 +52,9 @@ class HTS(object):
         self.assumptions = None
         self.lemmas = None
 
-        self.init = None
-        self.trans = None
-        self.invar = None
+        self._s_init = None
+        self._s_trans = None
+        self._s_invar = None
 
         self.logic = L_BV
         self.en_simplify = False
@@ -123,39 +123,39 @@ class HTS(object):
             ts.remove_invar()
 
     def single_init(self):
-        if self.init is None:
-            self.init = TRUE()
+        if self._s_init is None:
+            self._s_init = TRUE()
             for ts in self.tss:
                 if ts.init is not None:
-                    self.init = And(self.init, ts.init)
+                    self.init = And(self._s_init, ts.init)
 
-        return self.init
+        return self._s_init
 
     def single_trans(self):
-        if self.trans is None:
-            self.trans = TRUE()
+        if self._s_trans is None:
+            self._s_trans = TRUE()
             for ts in self.tss:
                 if ts.trans is not None:
-                    self.trans = And(self.trans, ts.trans)
+                    self._s_trans = And(self._s_trans, ts.trans)
 
-        return self.trans
+        return self._s_trans
 
     def single_invar(self, rebuild=False):
-        if (self.invar is None) or (rebuild):
-            self.invar = TRUE()
+        if (self._s_invar is None) or (rebuild):
+            self._s_invar = TRUE()
             for ts in self.tss:
                 if ts.invar is not None:
-                    self.invar = And(self.invar, ts.invar)
+                    self._s_invar = And(self._s_invar, ts.invar)
 
         if self.assumptions is not None:
-            return And(self.invar, And(self.assumptions))
+            return And(self._s_invar, And(self.assumptions))
 
-        return self.invar
+        return self._s_invar
 
     def reset_formulae(self):
-        self.init = None
-        self.invar = None
-        self.trans = None
+        self._s_init = None
+        self._s_invar = None
+        self._s_trans = None
 
     def combine(self, other_hts):
         for ts in other_hts.tss:

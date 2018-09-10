@@ -10,6 +10,8 @@
 
 import os
 
+from pysmt.shortcuts import And
+
 from cosa.problem import VerificationType
 from cosa.encoders.formulae import StringParser
 from cosa.utils.logger import Logger
@@ -19,7 +21,7 @@ from cosa.analyzers.bmc_safety import BMCSafety
 from cosa.analyzers.bmc_ltl import BMCLTL
 from cosa.problem import VerificationStatus
 from cosa.encoders.miter import Miter
-from cosa.representation import HTS
+from cosa.representation import HTS, TS
 from cosa.encoders.explicit_transition_system import ExplicitTSParser
 from cosa.encoders.symbolic_transition_system import SymbolicTSParser, SymbolicSimpleTSParser
 from cosa.encoders.btor2 import BTOR2Parser
@@ -40,7 +42,7 @@ class ProblemSolver(object):
     def __init__(self):
         pass
 
-    def solve_problem(self, problem, config, prev_true_props=None):
+    def solve_problem(self, problem, config):
         Logger.log("\n*** Analyzing problem \"%s\" ***"%(problem), 1)
         Logger.msg("Solving \"%s\" "%problem.name, 0, not(Logger.level(1)))
         
@@ -68,11 +70,6 @@ class ProblemSolver(object):
 
         [mc_config.properties, mc_config.lemmas, mc_config.assumptions] = parsing_defs
 
-        if prev_true_props is not None:
-            if mc_config.assumptions is None:
-                mc_config.assumptions = []
-            mc_config.assumptions += prev_true_props
-        
         assumps = None
         lemmas = None
 
@@ -108,6 +105,8 @@ class ProblemSolver(object):
             else:
                 (strprop, prop, types) = lparser.parse_formulae(mc_config.properties)[0]
 
+        problem.formula = prop
+                
         if problem.verification == VerificationType.SAFETY:
             accepted_ver = True
             Logger.log("Property: %s"%(prop.serialize(threshold=100)), 2)
@@ -261,7 +260,6 @@ class ProblemSolver(object):
         else:
             systems[('hts2', si)] = None
 
-        prev_true_props = None            
         assume_if_true = config.assume_if_true or problems.assume_if_true
         
         for problem in problems.problems:
@@ -278,16 +276,25 @@ class ProblemSolver(object):
             if config.time or problems.time:
                 timer_solve = Logger.start_timer("Problem %s"%problem.name, False)
             try:
-                self.solve_problem(problem, config, prev_true_props)
+                self.solve_problem(problem, config)
                 Logger.msg(" %s\n"%problem.status, 0, not(Logger.level(1)))
 
+                print((assume_if_true), (problem.status == VerificationStatus.TRUE), (problem.assumptions == None), (problem.verification == VerificationType.SAFETY))
+                
                 if (assume_if_true) and \
                    (problem.status == VerificationStatus.TRUE) and \
+                   (problem.assumptions == None) and \
                    (problem.verification == VerificationType.SAFETY):
-                    if prev_true_props is None:
-                        prev_true_props = []
-                    prev_true_props.append(problem.formula)
-                
+                    print("ADD")
+                    ass_ts = TS("ADDITIONAL")
+                    if TS.has_next(problem.formula):
+                        ass_ts.trans = problem.formula
+                    else:
+                        ass_ts.invar = problem.formula
+                    problem.hts.reset_formulae()
+
+                    problem.hts.add_ts(ass_ts)
+                        
                 if config.time or problems.time:
                     problem.time = Logger.get_timer(timer_solve, False)
                 
