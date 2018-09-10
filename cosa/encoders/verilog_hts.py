@@ -22,7 +22,7 @@ except:
     VPARSER = False
 
 from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type, get_model, is_sat
-from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT, BVXor, BVOr, BVLShl
+from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT, BVUGT, BVXor, BVOr, BVLShl
 from pysmt.fnode import FNode
 from pysmt.typing import BOOL, BVType, ArrayType, INT
 from pysmt.rewritings import conjunctive_partition
@@ -339,7 +339,11 @@ class VerilogSTSWalker(VerilogWalker):
 
     def BlockingSubstitution(self, modulename, el, args):
         left, right = args[0], args[1]
+        delay = 0
         
+        if len(args) > 2:
+            delay = args[2]
+            
         if (type(left) == int) and (type(right) == FNode):
             left = BV(left, get_type(right).width)
 
@@ -350,10 +354,13 @@ class VerilogSTSWalker(VerilogWalker):
             left = BV(left, MAXINT)
         if type(right) == int:
             right = BV(right, MAXINT)
-
+            
         fv_left = get_free_variables(left)
         fv_right = get_free_variables(right)
 
+        if delay == 1:
+            left = TS.to_next(left)
+        
         return EqualsOrIff(left, B2BV(right))
 
     def SensList(self, modulename, el, args):
@@ -391,13 +398,14 @@ class VerilogSTSWalker(VerilogWalker):
         if el.name in self.varmap:
             return self.get_var(modulename, el.name)
 
+        Logger.error("Symbol \"%s\" is not defined, line %d"%(el.name, el.lineno))
         return el.name
     
     def Width(self, modulename, el, args):
         return (args[0] - args[1])+1
     
     def Block(self, modulename, el, args):
-        return args
+        return And(args)
 
     def Cond(self, modulename, el, args):
         return Ite(args[0], args[1], args[2])
@@ -421,7 +429,7 @@ class VerilogSTSWalker(VerilogWalker):
 
     def Initial(self, modulename, el, args):
         self.ts.init = And(self.ts.init, And(args))
-        return args
+        return And(args)
             
     def Always(self, modulename, el, args):
         condition, statements = args[0], args[1]
@@ -571,7 +579,13 @@ class VerilogSTSWalker(VerilogWalker):
         if type(right) == int:
             right = BV(right, MAXINT)
         return BVULT(left, right)
-             
+
+    def GreaterThan(self, modulename, el, args):
+        left, right = args[0], args[1]
+        if type(right) == int:
+            right = BV(right, MAXINT)
+        return BVUGT(left, right)
+    
     def Ulnot(self, modulename, el, args):
         if type(args[0]) == int:
             return Not(self.to_bool(args[0]))
@@ -596,7 +610,12 @@ class VerilogSTSWalker(VerilogWalker):
         return BVExtract(args[0], args[2], args[1])
 
     def Assign(self, modulename, el, args):
-        invar = EqualsOrIff(B2BV(args[0]), B2BV(args[1]))
+        left, right = args[0], args[1]
+
+        if type(right) == int:
+            right = BV(right, get_type(left).width)
+        
+        invar = EqualsOrIff(B2BV(left), B2BV(right))
         self.ts.invar = And(self.ts.invar, invar)
         return el
     
@@ -731,3 +750,15 @@ class VerilogSTSWalker(VerilogWalker):
     def IdentifierScopeLabel(self, modulename, el, args):
         Logger.error("Unsupported indentifier scope, line %d"%(el.lineno))
         return el
+
+    def DelayStatement(self, modulename, el, args):
+        delay = int(el.delay.value)
+        if delay == 1:
+            return delay
+        Logger.error("Unsupported delay statement != 1, line %d"%(el.lineno))
+        return el
+        
+    def ForeverStatement(self, modulename, el, args):
+        statement = And(args)
+        self.ts.trans = And(self.ts.trans, statement)
+        return TRUE()

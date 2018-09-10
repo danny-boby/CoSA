@@ -29,6 +29,7 @@ from cosa.encoders.monitors import MonitorsFactory
 from cosa.encoders.coreir import CoreIRParser
 from cosa.encoders.formulae import StringParser
 from cosa.encoders.factory import ModelParsersFactory
+from cosa.encoders.template import EncoderConfig
 from cosa.encoders.miter import Miter
 from cosa.encoders.ltl import ltl_reset_env, LTLParser
 from cosa.problem import Problems, VerificationStatus, VerificationType
@@ -164,9 +165,16 @@ def run_verification(config):
     
     hts = HTS("Top level")
 
+    encoder_config = EncoderConfig()
+    encoder_config.abstract_clock = config.abstract_clock
+    encoder_config.symbolic_init = config.symbolic_init
+    encoder_config.deterministic = config.deterministic
+    encoder_config.boolean = config.boolean
+    encoder_config.no_clock = config.no_clock
+    
     if config.strfiles[0][-4:] != ".pkl":
         ps = ProblemSolver()
-        (hts, invar_props, ltl_props) = ps.parse_model("./", config.strfiles, config.abstract_clock, config.symbolic_init, deterministic=config.deterministic, boolean=config.boolean, no_clock=config.no_clock)
+        (hts, invar_props, ltl_props) = ps.parse_model("./", config.strfiles, encoder_config)
         config.parser = ps.parser
 
         if config.pickle_file:
