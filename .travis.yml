@@ -7,6 +7,7 @@ sudo: required
 
 cache:
   directories:
+  - ${TRAVIS_BUILD_DIR}/pycoreir
   - ${TRAVIS_BUILD_DIR}/pysmt
   - ${TRAVIS_BUILD_DIR}/coreir
   - /home/travis/.smt_solvers/python-bindings-3.6
@@ -38,7 +39,7 @@ addons:
      - iverilog
 
 install:
-  - pip install six pyparsing coreir bit_vector pyverilog
+  - pip install six pyparsing bit_vector pyverilog
   - bash scripts/travis_install.sh
 
 env:
