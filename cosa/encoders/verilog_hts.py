@@ -22,7 +22,8 @@ except:
     VPARSER = False
 
 from pysmt.shortcuts import Symbol, BV, simplify, TRUE, FALSE, get_type, get_model, is_sat
-from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, BVExtract, BVAdd, BVConcat, BVULT, BVUGT, BVXor, BVOr, BVLShl
+from pysmt.shortcuts import And, Implies, Iff, Not, BVAnd, EqualsOrIff, Ite, Or, Xor, \
+    BVExtract, BVAdd, BVConcat, BVULT, BVULE, BVUGT, BVUGE, BVXor, BVOr, BVLShl
 from pysmt.fnode import FNode
 from pysmt.typing import BOOL, BVType, ArrayType, INT
 from pysmt.rewritings import conjunctive_partition
@@ -576,15 +577,39 @@ class VerilogSTSWalker(VerilogWalker):
         
     def LessThan(self, modulename, el, args):
         left, right = args[0], args[1]
+        if (type(right) == int) and (type(left) == FNode):
+            right = BV(right, get_type(left).width)
+            
         if type(right) == int:
             right = BV(right, MAXINT)
         return BVULT(left, right)
 
+    def LessEq(self, modulename, el, args):
+        left, right = args[0], args[1]
+        if (type(right) == int) and (type(left) == FNode):
+            right = BV(right, get_type(left).width)
+            
+        if type(right) == int:
+            right = BV(right, MAXINT)
+        return BVULE(left, right)
+    
     def GreaterThan(self, modulename, el, args):
         left, right = args[0], args[1]
+        if (type(right) == int) and (type(left) == FNode):
+            right = BV(right, get_type(left).width)
+        
         if type(right) == int:
             right = BV(right, MAXINT)
         return BVUGT(left, right)
+
+    def GreaterEq(self, modulename, el, args):
+        left, right = args[0], args[1]
+        if (type(right) == int) and (type(left) == FNode):
+            right = BV(right, get_type(left).width)
+        
+        if type(right) == int:
+            right = BV(right, MAXINT)
+        return BVUGE(left, right)
     
     def Ulnot(self, modulename, el, args):
         if type(args[0]) == int:

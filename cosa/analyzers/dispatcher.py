@@ -264,14 +264,11 @@ class ProblemSolver(object):
                 self.solve_problem(problem, config)
                 Logger.msg(" %s\n"%problem.status, 0, not(Logger.level(1)))
 
-                print((assume_if_true), (problem.status == VerificationStatus.TRUE), (problem.assumptions == None), (problem.verification == VerificationType.SAFETY))
-                
                 if (assume_if_true) and \
                    (problem.status == VerificationStatus.TRUE) and \
                    (problem.assumptions == None) and \
                    (problem.verification == VerificationType.SAFETY):
-                    print("ADD")
-                    ass_ts = TS("ADDITIONAL")
+                    ass_ts = TS("Previous assumption from property")
                     if TS.has_next(problem.formula):
                         ass_ts.trans = problem.formula
                     else:

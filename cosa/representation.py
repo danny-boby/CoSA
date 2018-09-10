@@ -127,7 +127,7 @@ class HTS(object):
             self._s_init = TRUE()
             for ts in self.tss:
                 if ts.init is not None:
-                    self.init = And(self._s_init, ts.init)
+                    self._s_init = And(self._s_init, ts.init)
 
         return self._s_init
 
