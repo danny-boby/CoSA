@@ -26,6 +26,7 @@ from cosa.encoders.btor2 import BTOR2Parser
 from cosa.encoders.ltl import ltl_reset_env, LTLParser
 from cosa.encoders.monitors import MonitorsFactory
 from cosa.encoders.factory import ModelParsersFactory
+from cosa.encoders.template import EncoderConfig
 
 FLAG_SR = "["
 FLAG_ST = "]"
@@ -126,10 +127,8 @@ class ProblemSolver(object):
             if problem.equivalence:
                 (problem.hts2, _, _) = self.parse_model(problem.relative_path, \
                                                         problem.equivalence, \
-                                                        problem.abstract_clock, \
-                                                        problem.symbolic_init, "System 2", \
-                                                        no_clock=problem.no_clock, \
-                                                        run_passes=problem.run_coreir_passes)
+                                                        encoder_config, \
+                                                        "System 2")
 
             htseq, miter_out = Miter.combine_systems(problem.hts, \
                                                      problem.hts2, \
@@ -176,13 +175,8 @@ class ProblemSolver(object):
     def parse_model(self, \
                     relative_path, \
                     model_files, \
-                    abstract_clock, \
-                    symbolic_init, \
-                    name=None, \
-                    deterministic=False, \
-                    boolean=False, \
-                    no_clock=False, \
-                    run_passes=True):
+                    config, \
+                    name=None):
         
         hts = HTS("System 1")
         invar_props = []
@@ -198,16 +192,8 @@ class ProblemSolver(object):
                 strfile = relative_path+strfile
             parser = None
 
-            if filetype in CoreIRParser.get_extensions():
-                parser = CoreIRParser(abstract_clock, symbolic_init, no_clock, run_passes)
-                parser.boolean = boolean
-                parser.deterministic = deterministic
-                self.parser = parser
-
             for av_parser in ModelParsersFactory.get_parsers():
                 assert av_parser.name is not None
-                if av_parser.name == CoreIRParser.name:
-                    continue
                 if filetype in av_parser.get_extensions():
                     parser = av_parser
                     if not self.parser:
@@ -218,7 +204,7 @@ class ProblemSolver(object):
                     Logger.error("File \"%s\" does not exist"%strfile)
 
                 Logger.msg("Parsing file \"%s\"... "%(strfile), 0)
-                (hts_a, inv_a, ltl_a) = parser.parse_file(strfile, flags)
+                (hts_a, inv_a, ltl_a) = parser.parse_file(strfile, config, flags)
                 hts.combine(hts_a)
 
                 invar_props += inv_a
@@ -240,24 +226,23 @@ class ProblemSolver(object):
             
         if VerificationType.LTL in [problem.verification for problem in problems.problems]:
             ltl_reset_env()
-        
+
+        encoder_config = self.problems2encoder_config(config, problems)
+            
         # generate systems for each problem configuration
         systems = {}
         for si in problems.symbolic_inits:
+            encoder_config.symbolic_init = si
             (systems[('hts', si)], _, _) = self.parse_model(problems.relative_path, \
                                                             problems.model_file, \
-                                                            problems.abstract_clock, si, "System 1", \
-                                                            boolean=problems.boolean, \
-                                                            no_clock=problems.no_clock, \
-                                                            run_passes=problems.run_coreir_passes)
+                                                            encoder_config, # si,\
+                                                            "System 1")
 
         if problems.equivalence is not None:
             (systems[('hts2', si)], _, _) = self.parse_model(problems.relative_path, \
                                                              problems.equivalence, \
-                                                             problems.abstract_clock, si, "System 2", \
-                                                             boolean=problems.boolean, \
-                                                             no_clock=problems.no_clock, \
-                                                             run_passes=problems.run_coreir_passes)
+                                                             encoder_config, #si, \
+                                                             "System 2")
         else:
             systems[('hts2', si)] = None
 
@@ -316,3 +301,16 @@ class ProblemSolver(object):
         mc_config.lemmas = problem.lemmas
 
         return mc_config
+
+
+    def problems2encoder_config(self, config, problems):
+        encoder_config = EncoderConfig()
+        encoder_config.abstract_clock = problems.abstract_clock
+        encoder_config.symbolic_init = config.symbolic_init
+        encoder_config.no_clock = problems.no_clock
+        encoder_config.deterministic = config.deterministic
+        encoder_config.run_passes = config.run_passes
+        encoder_config.boolean = problems.boolean
+        
+        return encoder_config
+        

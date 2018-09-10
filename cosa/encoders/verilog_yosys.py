@@ -98,7 +98,7 @@ class VerilogYosysParser(ModelParser):
 
         return new_filenames
     
-    def parse_file(self, strfile, flags=None):
+    def parse_file(self, strfile, config, flags=None):
         if flags is None:
             Logger.error("Top module not provided")
 

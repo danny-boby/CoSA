@@ -60,14 +60,9 @@ class CoreIRParser(ModelParser):
     extensions = ["json"]
     name = "CoreIR"
     
-    abstract_clock = None
-    no_clock = None
-    symbolic_init = None
-
     context = None
 
     attrnames = None
-    boolean = False
     pack_connections = False
     anonimize_names = False
     map_an2or = None
@@ -75,26 +70,19 @@ class CoreIRParser(ModelParser):
     bitvec_new_version = True
     idvars = 0
 
-    deterministic = False
-
     enabled = True
 
     def is_available(self):
         return COREIR
             
-    def __init__(self, abstract_clock=False, symbolic_init=False, no_clock=False, run_passes=True):
+    def __init__(self):
         if COREIR:
             self.context = coreir.Context()
             for lib in LIBRARIES:
                 self.context.load_library(lib)
 
-            self.abstract_clock = abstract_clock
-            self.no_clock = no_clock
-            self.symbolic_init = symbolic_init
-
             self.__init_attrnames()
 
-            self.boolean = False
             self.pack_connections = True
             self.map_an2or = {}
             self.map_or2an = {}
@@ -109,8 +97,6 @@ class CoreIRParser(ModelParser):
 
             Logger.time = True
 
-            self.deterministic = False
-        
     @staticmethod        
     def get_extensions():
         return CoreIRParser.extensions
@@ -157,7 +143,7 @@ class CoreIRParser(ModelParser):
             self.map_an2or[name] = orname
             self.map_or2an[orname] = name
 
-        if self.boolean and (width == 1):
+        if self.config.boolean and (width == 1):
             return Symbol(name, BOOL)
 
         return Symbol(name, BVType(width))
@@ -326,14 +312,16 @@ class CoreIRParser(ModelParser):
             
         return sym
         
-    def parse_file(self, strfile, flags=None):
+    def parse_file(self, strfile, config, flags=None):
+        self.config = config
         Logger.msg("Reading CoreIR system... ", 1)
         top_module = self.context.load_from_file(strfile)
-        
-        self.run_passes()
+
+        if config.run_passes:
+            self.run_passes()
        
-        Modules.abstract_clock = self.abstract_clock
-        Modules.symbolic_init = self.symbolic_init
+        Modules.abstract_clock = self.config.abstract_clock
+        Modules.symbolic_init = self.config.symbolic_init
         
         top_def = top_module.definition
         interface = list(top_module.type.items())
@@ -386,7 +374,7 @@ class CoreIRParser(ModelParser):
         if Logger.level(2):
             ttimer = Logger.start_timer("Convertion", False)
 
-        if self.deterministic:
+        if self.config.deterministic:
             td_instances = top_def.instances
             top_def_instances = [(inst.selectpath, inst.config, inst.module) for inst in td_instances]
             top_def_instances.sort()
@@ -411,7 +399,7 @@ class CoreIRParser(ModelParser):
             
             ts = None
 
-            if self.deterministic:
+            if self.config.deterministic:
                 (inst_name, inst_conf, inst_mod) = inst
             else:
                 inst_name = inst.selectpath
@@ -465,7 +453,7 @@ class CoreIRParser(ModelParser):
 
         Logger.clear_inline(1)
 
-        if self.deterministic:
+        if self.config.deterministic:
             interface.sort()
 
         for var in interface:
@@ -477,7 +465,7 @@ class CoreIRParser(ModelParser):
                 hts.add_output_var(bvvar)
 
             # Adding clock behavior
-            if (not self.no_clock) and (self.CLK in var[0].lower()) and (var[1].is_input()):
+            if (not self.config.no_clock) and (self.CLK in var[0].lower()) and (var[1].is_input()):
                 Logger.log("Adding clock behavior to \"%s\" input"%(varname), 1)
                 ts = Modules.Clock(bvvar)
                 
@@ -501,7 +489,7 @@ class CoreIRParser(ModelParser):
         eq_conns = []
         eq_vars = set([])
 
-        if self.deterministic:
+        if self.config.deterministic:
             td_connections = top_def.connections
             top_def_connections = [((conn.first.selectpath, conn.second.selectpath) if conn.first.selectpath < conn.second.selectpath else (conn.second.selectpath, conn.first.selectpath), conn) for conn in td_connections]
             top_def_connections.sort()
@@ -510,7 +498,7 @@ class CoreIRParser(ModelParser):
             
         for conn in top_def_connections:
 
-            if self.deterministic:
+            if self.config.deterministic:
                 first_selectpath = split_paths(conn[0][0])
                 second_selectpath = split_paths(conn[0][1])
             else:

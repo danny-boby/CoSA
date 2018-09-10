@@ -67,7 +67,7 @@ class ExplicitTSParser(ModelParser):
     def __init__(self):
         self.parser = self.__init_parser()
 
-    def parse_file(self, strfile, flags=None):
+    def parse_file(self, strfile, config, flags=None):
         with open(strfile, "r") as f:
             return self.parse_string(f.read())
 
