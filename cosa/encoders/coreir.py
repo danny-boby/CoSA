@@ -69,6 +69,7 @@ class CoreIRParser(ModelParser):
     map_or2an = None
     bitvec_new_version = True
     idvars = 0
+    enc_map = None
 
     enabled = True
 
