@@ -10,10 +10,10 @@ init2: BV(8);
 # Modules instantiation
 counter_1: Counter(clk1, rst, init1);
 counter_2: Counter(clk2, rst, init2);
-adder: Adder(counter_1.output, counter_2.output);
+adder: Adder(counter_1.out, counter_2.out);
 
 OUTPUT
-output: BV(8);
+out: BV(8);
 
 # Initial state constraints
 INIT
@@ -26,38 +26,38 @@ TRANS
 (clk1 = 0_1) <-> (next(clk1) = 1_1);
 (clk2 = 0_1) <-> (next(clk2) = 1_1);
 
-# We reset when output > 10
-((output > 10_8) -> ((rst = 0_1) & (next(rst) = 1_1)));
+# We reset when out > 10
+((out > 10_8) -> ((rst = 0_1) & (next(rst) = 1_1)));
 
-# We allow a reset only when output > 1
-(rst = 0_1) & (next(rst) = 1_1) -> (output > 1_8);
+# We allow a reset only when out > 1
+(rst = 0_1) & (next(rst) = 1_1) -> (out > 1_8);
 
 # Constraints on the system
 INVAR
-output = adder.output;
+out = adder.out;
 init1 = 0_8;
 init2 = 2_8;
 
 # Module Adder definition
 DEF Adder(in1: BV(8), in2: BV(8)):
   VAR
-  output: BV(8);
+  out: BV(8);
 
   INVAR
-  output = (in1 + in2);
+  out = (in1 + in2);
   
 # Module Counter definition
 DEF Counter(clk: BV(1), rst: BV(1), initval: BV(8)):
   VAR
-  output: BV(8);
+  out: BV(8);
 
   INIT
-  output = 0_8;
+  out = 0_8;
 
   TRANS
-  # When posedge and not reset we increase the output by 1
-  (((clk = 0_1) & (next(clk) = 1_1)) & !((next(rst) = 1_1) & (rst = 0_1))) -> (next(output) = (output + 1_8));
-  # When negedge and not reset we keep the value of the output
-  (((clk = 1_1) & (next(clk) = 0_1)) & !((next(rst) = 1_1) & (rst = 0_1))) -> (next(output) = (output));
-  # When reset we set output to initval
-  ((rst = 0_1) & (next(rst) = 1_1)) -> (next(output) = initval);
+  # When posedge and not reset we increase the out by 1
+  (((clk = 0_1) & (next(clk) = 1_1)) & !((next(rst) = 1_1) & (rst = 0_1))) -> (next(out) = (out + 1_8));
+  # When negedge and not reset we keep the value of the out
+  (((clk = 1_1) & (next(clk) = 0_1)) & !((next(rst) = 1_1) & (rst = 0_1))) -> (next(out) = (out));
+  # When reset we set out to initval
+  ((rst = 0_1) & (next(rst) = 1_1)) -> (next(out) = initval);
