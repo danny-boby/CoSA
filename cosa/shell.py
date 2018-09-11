@@ -363,7 +363,6 @@ def run_problems(problems, config):
             correct = VerificationStatus.compare(VerificationStatus.convert(pbm.expected), pbm.status)
             if not correct:
                 Logger.log("ERROR: %s != %s"%(pbm.status, expected), 0)
-            if not expected:
                 global_status = 1
 
         assert not(config.force_expected and (pbm.expected is None))
