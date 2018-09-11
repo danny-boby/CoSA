@@ -221,20 +221,14 @@ class HTS(object):
 
             for var in sub_state_vars:
                 self.add_state_var(var)
-                
+
             links = TRUE()
             for i in range(len(actual)):
                 if type(actual[i]) == str:
                     local_expr = vardic[full_path(actual[i], path)]
                 else:
-                    local_vars = [(v, full_path(v.symbol_name(), path)) for v in get_free_variables(actual[i])]
-                    for local_var in local_vars:
-                        if local_var[1] not in vardic:
-                            modulevar = Symbol(local_var[1], local_var[0].symbol_type())
-                            self.vars.add(modulevar)
-                            vardic[local_var[1]] = modulevar
-                    
-                    local_expr = substitute(actual[i], dict([(v[0].symbol_name(), vardic[v[1]].symbol_name()) for v in local_vars]))
+                    local_vars = [(v.symbol_name(), v.symbol_name().replace(self.name, ".".join(path))) for v in get_free_variables(actual[i])]
+                    local_expr = substitute(actual[i], dict(local_vars))
                 module_var = sub[2].newname(formal[i].symbol_name(), path+[sub[0]])
                 assert sub[2].name != ""
                 if module_var not in vardic:
@@ -253,7 +247,7 @@ class HTS(object):
         
         replace_dic = dict([(v.symbol_name(), self.newname(v.symbol_name(), path)) for v in self.vars] + \
                            [(TS.get_prime_name(v.symbol_name()), self.newname(TS.get_prime_name(v.symbol_name()), path)) for v in self.vars])
-
+        
         s_init = substitute(s_init, replace_dic)
         s_invar = substitute(s_invar, replace_dic)
         s_trans = substitute(s_trans, replace_dic)

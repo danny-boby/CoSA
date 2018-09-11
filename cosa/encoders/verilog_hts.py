@@ -142,7 +142,6 @@ class VerilogSTSWalker(VerilogWalker):
     def reset_structures(self, modulename=""):
         self.hts = HTS(modulename)
         self.ts = TS()
-        self.subhtsdic = {}
         self.portslist = None
         if self.varmap is None: self.varmap = {}
         if self.paramdic is None: self.paramdic = {}
@@ -732,17 +731,13 @@ class VerilogSTSWalker(VerilogWalker):
                 instances.append((idx_instance_name, idx_params))
         else:        
             instances = [(el.name, portargs)]
-            
-        for (instance, actualargs) in instances:
-            if param_modulename not in self.subhtsdic:
-                instancewalker = VerilogSTSWalker()
-                instancewalker.paramdic = dict(paramargs)
-                instancewalker.varmap = varmap
-                instancewalker.modulesdic = self.modulesdic
-                subhts = instancewalker.walk_module(self.modulesdic[el.module], param_modulename)
-                self.subhtsdic[param_modulename] = subhts
 
-            subhts = self.subhtsdic[param_modulename]
+        for (instance, actualargs) in instances:
+            instancewalker = VerilogSTSWalker()
+            instancewalker.paramdic = dict(paramargs)
+            instancewalker.varmap = varmap
+            instancewalker.modulesdic = self.modulesdic
+            subhts = instancewalker.walk_module(self.modulesdic[el.module], param_modulename)
             subhts.name = param_modulename
 
             self.hts.add_sub(instance, subhts, tuple([a[1] for a in actualargs]))
