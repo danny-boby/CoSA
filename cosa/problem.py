@@ -72,7 +72,6 @@ class Problems(object):
     boolean = None
     time = False
     assume_if_true = False
-    verification = None
     
     def __init__(self):
         self.problems = []
@@ -120,7 +119,8 @@ class Problems(object):
                     if hasattr(self, attr):
                         setattr(self, attr, auto_convert(value))
                     else:
-                        Logger.error("Attribute \"%s\" not found"%attr)
+                        if not hasattr(Problem(), attr):
+                            Logger.error("Attribute \"%s\" not found"%attr)
                 continue
             pbm = self.generate_problem(value, problem)
             pbm.name = value
